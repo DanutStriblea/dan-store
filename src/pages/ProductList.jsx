@@ -68,20 +68,21 @@ const ProductList = ({ searchTerm }) => {
               </p>
             </Link>
             <div className="absolute bottom-2 right-2 flex space-x-2 items-center sm:bottom-2 sm:right-2">
-              <div className="mt-1 sm:mt-1 sm:ml-2 sm:static">
-                <FavoriteButton product={product} showText={false} />
-              </div>
-              {addedToCart[product.id] ? (
+              <FavoriteButton product={product} showText={false} />
+              <button
+                onClick={() =>
+                  addedToCart[product.id]
+                    ? handleRemoveFromCart(product)
+                    : handleAddToCart(product)
+                }
+                className="text-sky-900 hover:text-sky-700 active:text-sky-800 transition-colors duration-200 transform active:scale-105"
+              >
                 <FaShoppingCart
-                  className="text-red-600 cursor-pointer w-5 h-5 mt-4 hover:text-red-500 active:text-red-700 transition-colors duration-200 transform active:scale-105 hidden sm:block"
-                  onClick={() => handleRemoveFromCart(product)}
+                  className={
+                    addedToCart[product.id] ? "fill-current" : "stroke-current"
+                  }
                 />
-              ) : (
-                <FaShoppingCart
-                  className="text-sky-900 cursor-pointer w-5 h-5 mt-4 hover:text-sky-700 active:text-sky-800 transition-colors duration-200 transform active:scale-105 hidden sm:block"
-                  onClick={() => handleAddToCart(product)}
-                />
-              )}
+              </button>
             </div>
           </div>
         ))

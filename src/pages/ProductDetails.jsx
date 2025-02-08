@@ -87,7 +87,9 @@ const ProductDetails = () => {
             Livrare gratuită pentru comenzile de peste 300 RON. Curier rapid
             disponibil.
           </p>
-          <FavoriteButton product={product} />
+          <div className="mt-4">
+            <FavoriteButton product={product} />
+          </div>
         </div>
       </div>
     </div>

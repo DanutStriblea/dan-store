@@ -38,6 +38,10 @@ const ProductList = ({ searchTerm }) => {
       })
     : products;
 
+  useEffect(() => {
+    console.log("Filtered Products:", filteredProducts);
+  }, [filteredProducts]);
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5 p-3">
       {filteredProducts.length > 0 ? (
@@ -69,11 +73,13 @@ const ProductList = ({ searchTerm }) => {
             </Link>
             <div className="absolute bottom-2 right-2 flex space-x-2 items-center sm:bottom-2 sm:right-2">
               <FavoriteButton product={product} showText={false} />
-              <CartButton
-                addedToCart={!!addedToCart[product.id]}
-                onAddToCart={() => handleAddToCart(product)}
-                onRemoveFromCart={() => handleRemoveFromCart(product)}
-              />
+              <div className="hidden sm:block">
+                <CartButton
+                  addedToCart={!!addedToCart[product.id]}
+                  onAddToCart={() => handleAddToCart(product)}
+                  onRemoveFromCart={() => handleRemoveFromCart(product)}
+                />
+              </div>
             </div>
           </div>
         ))

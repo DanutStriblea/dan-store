@@ -1,0 +1,88 @@
+// src/data.js
+
+export const products = [
+  {
+    id: 1,
+    image: "https://picsum.photos/200",
+    title: "Alin 1",
+    description: "Descriere produs 1",
+    price: 100,
+  },
+  {
+    id: 2,
+    image: "https://picsum.photos/201",
+    title: "Alina 2",
+    description: "Descriere produs 2",
+    price: 200,
+  },
+  {
+    id: 3,
+    image: "https://picsum.photos/202",
+    title: "Anca 3",
+    description: "Descriere produs 3",
+    price: 300,
+  },
+  {
+    id: 4,
+    image: "https://picsum.photos/203",
+    title: "Bianca 4",
+    description: "Descriere produs 4",
+    price: 300,
+  },
+  {
+    id: 5,
+    image: "https://picsum.photos/204",
+    title: "Cristina 5",
+    description: "Descriere produs 5",
+    price: 300,
+  },
+  {
+    id: 6,
+    image: "https://picsum.photos/205",
+    title: "Danut 6",
+    description: "Descriere produs 6",
+    price: 300,
+  },
+  {
+    id: 7,
+    image: "https://picsum.photos/206",
+    title: "Roxana 7",
+    description: "Descriere produs 7",
+    price: 300,
+  },
+  {
+    id: 8,
+    image: "https://picsum.photos/207",
+    title: "Florin 8",
+    description: "Descriere produs 8",
+    price: 300,
+  },
+  {
+    id: 9,
+    image: "https://picsum.photos/208",
+    title: "George 9",
+    description: "Descriere produs 9",
+    price: 300,
+  },
+  {
+    id: 10,
+    image: "https://picsum.photos/209",
+    title: "Ionel 10",
+    description: "Descriere produs 10",
+    price: 300,
+  },
+  {
+    id: 11,
+    image: "https://picsum.photos/2010",
+    title: "Laviniu 11",
+    description: "Descriere produs 11",
+    price: 300,
+  },
+  {
+    id: 12,
+    image: "https://picsum.photos/211",
+    title: "Marius 12",
+    description: "Descriere produs 12",
+    price: 300,
+  },
+];

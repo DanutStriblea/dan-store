@@ -20,9 +20,17 @@ const FavoriteButton = ({ product, showText = true }) => {
     <div className="flex items-center">
       <button
         onClick={handleFavoriteClick}
-        className="ml-2 text-sky-900 hover:text-sky-700 active:text-sky-800 transition-colors duration-200 transform active:scale-105"
+        className={`transition-colors duration-200 transform active:scale-105 ${
+          isFavorite
+            ? "text-red-600 hover:text-red-500 active:text-red-700"
+            : "text-gray-400 hover:text-gray-600 active:text-gray-500"
+        }`}
       >
-        {isFavorite ? <FaHeart /> : <FaRegHeart />}
+        {isFavorite ? (
+          <FaHeart className="fill-current" />
+        ) : (
+          <FaRegHeart className="stroke-current" />
+        )}
       </button>
       {showText && (
         <span className="ml-2 text-sm text-gray-600">

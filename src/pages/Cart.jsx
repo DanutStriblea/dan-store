@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom"; // Importăm Link pentru navigare
+import { Link } from "react-router-dom";
 
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity } = useContext(CartContext);
@@ -54,14 +54,11 @@ const Cart = () => {
                 </div>
               </Link>
 
-              {/* Grupare preț + cantitate + buton Șterge pe același rând */}
               <div className="flex items-center justify-between w-full sm:w-auto space-x-4">
-                {/* Preț */}
                 <p className="text-gray-700 font-semibold">
                   {item.price * item.quantity} RON
                 </p>
 
-                {/* Selector cantitate */}
                 <div className="flex items-center">
                   <label
                     htmlFor={`quantity-input-${item.id}`}
@@ -72,7 +69,7 @@ const Cart = () => {
                   <input
                     type="number"
                     id={`quantity-input-${item.id}`}
-                    name={`quantity-${item.id}`} // Adăugat nume unic
+                    name={`quantity-${item.id}`}
                     value={item.quantity}
                     onChange={(e) =>
                       handleQuantityChange(item.id, e.target.value)
@@ -82,7 +79,6 @@ const Cart = () => {
                   />
                 </div>
 
-                {/* Buton Șterge */}
                 <button
                   className="bg-red-600 text-white px-2 py-2 rounded-md transform transition duration-250 hover:bg-red-700 active:scale-105 active:bg-red-800 w-24 sm:w-auto"
                   onClick={() => removeFromCart(item.id)}

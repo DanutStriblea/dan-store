@@ -1,14 +1,14 @@
-import { Link } from "react-router-dom"; // Importăm Link pentru a naviga către detaliile produsului
+import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import { products } from "../data"; // Importăm lista de produse din data.js
-import FavoriteButton from "../components/FavoriteButton"; // Importăm componenta FavoriteButton
+import { products } from "../data";
+import FavoriteButton from "../components/FavoriteButton";
+import CartButton from "../components/CartButton";
 import { useContext, useState, useEffect } from "react";
-import { CartContext } from "../context/CartContext"; // Importăm CartContext
-import { FaShoppingCart } from "react-icons/fa"; // Importăm iconița de coș
+import { CartContext } from "../context/CartContext";
 
 const ProductList = ({ searchTerm }) => {
-  const { cartItems, addToCart, removeFromCart } = useContext(CartContext); // Folosim CartContext
-  const [addedToCart, setAddedToCart] = useState({}); // Stare pentru a urmări produsele adăugate în coș
+  const { cartItems, addToCart, removeFromCart } = useContext(CartContext);
+  const [addedToCart, setAddedToCart] = useState({});
 
   useEffect(() => {
     const cartStatus = {};
@@ -69,20 +69,11 @@ const ProductList = ({ searchTerm }) => {
             </Link>
             <div className="absolute bottom-2 right-2 flex space-x-2 items-center sm:bottom-2 sm:right-2">
               <FavoriteButton product={product} showText={false} />
-              <button
-                onClick={() =>
-                  addedToCart[product.id]
-                    ? handleRemoveFromCart(product)
-                    : handleAddToCart(product)
-                }
-                className="text-sky-900 hover:text-sky-700 active:text-sky-800 transition-colors duration-200 transform active:scale-105"
-              >
-                <FaShoppingCart
-                  className={
-                    addedToCart[product.id] ? "fill-current" : "stroke-current"
-                  }
-                />
-              </button>
+              <CartButton
+                addedToCart={!!addedToCart[product.id]}
+                onAddToCart={() => handleAddToCart(product)}
+                onRemoveFromCart={() => handleRemoveFromCart(product)}
+              />
             </div>
           </div>
         ))
@@ -94,7 +85,7 @@ const ProductList = ({ searchTerm }) => {
 };
 
 ProductList.propTypes = {
-  searchTerm: PropTypes.string, // Fără `.isRequired`
+  searchTerm: PropTypes.string,
 };
 
 export default ProductList;

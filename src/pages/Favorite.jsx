@@ -1,9 +1,31 @@
-import { useContext } from "react";
+import { useContext, useState, useEffect } from "react";
 import { FavoriteContext } from "../context/FavoriteContext";
+import { CartContext } from "../context/CartContext";
 import { Link } from "react-router-dom";
+import CartButton from "../components/CartButton";
 
 const Favorite = () => {
   const { favoriteItems, removeFromFavorites } = useContext(FavoriteContext);
+  const { cartItems, addToCart, removeFromCart } = useContext(CartContext);
+  const [addedToCart, setAddedToCart] = useState({});
+
+  useEffect(() => {
+    const cartStatus = {};
+    cartItems.forEach((item) => {
+      cartStatus[item.id] = true;
+    });
+    setAddedToCart(cartStatus);
+  }, [cartItems]);
+
+  const handleAddToCart = (product) => {
+    addToCart(product, 1);
+    setAddedToCart((prevState) => ({ ...prevState, [product.id]: true }));
+  };
+
+  const handleRemoveFromCart = (product) => {
+    removeFromCart(product.id);
+    setAddedToCart((prevState) => ({ ...prevState, [product.id]: false }));
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -29,6 +51,12 @@ const Favorite = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
+                <CartButton
+                  addedToCart={!!addedToCart[item.id]}
+                  onAddToCart={() => handleAddToCart(item)}
+                  onRemoveFromCart={() => handleRemoveFromCart(item)}
+                  className="text-2xl" // Adaugă o clasă suplimentară pentru a mări butonul
+                />
                 <Link
                   to={`/product/${item.id}`}
                   className="bg-sky-900 text-white px-3 py-2 rounded-md"

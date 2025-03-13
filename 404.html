@@ -5,7 +5,7 @@
     <script type="text/javascript">
       setTimeout(function () {
         var pathname = window.location.pathname;
-        if (!pathname.endsWith("/index.html")) {
+        if (!pathname.includes("/index.html")) {
           var newUrl = pathname.replace("/dan-store/", "/dan-store/index.html");
           window.location.href = newUrl;
         }

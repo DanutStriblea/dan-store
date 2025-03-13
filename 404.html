@@ -5,8 +5,10 @@
     <script type="text/javascript">
       setTimeout(function () {
         var pathname = window.location.pathname;
-        var newUrl = pathname.replace("/dan-store/", "/dan-store/index.html");
-        window.location.href = newUrl;
+        if (!pathname.endsWith("/index.html")) {
+          var newUrl = pathname.replace("/dan-store/", "/dan-store/index.html");
+          window.location.href = newUrl;
+        }
       }, 0);
     </script>
   </head>

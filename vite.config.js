@@ -1,12 +1,25 @@
-// /* eslint-env node */
-
+/* global process */
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig(({ mode }) => ({
-  base: mode === "production" ? "/dan-store/" : "/", // Ajustăm baza în funcție de mediu
-  plugins: [react()],
-}));
+export default defineConfig(() => {
+  // Folosește variabila de mediu VITE_DEPLOY_TARGET pentru a diferenția mediu.
+  // Dacă variabila nu este setată, se va folosi implicit "ghpages".
+  const deployTarget = process.env.VITE_DEPLOY_TARGET || "ghpages";
+
+  // Pentru Vercel, base trebuie să fie "/" (servește de la rădăcină).
+  // Pentru GitHub Pages (gh-pages), base va fi "/dan-store/" conform câmpului "homepage".
+  const basePath = deployTarget === "vercel" ? "/" : "/dan-store/";
+
+  console.log(
+    `Building with deploy target: ${deployTarget}, base: ${basePath}`
+  );
+
+  return {
+    base: basePath,
+    plugins: [react()],
+  };
+});
 
 // import { defineConfig } from "vite";
 // import react from "@vitejs/plugin-react";

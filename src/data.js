@@ -1,0 +1,148 @@
+// src/data.js
+import { v4 as uuidv4 } from "uuid";
+export const products = [
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/200",
+      "https://picsum.photos/300",
+      "https://picsum.photos/400",
+    ],
+    title: "Alin 1",
+    description: "Descriere produs 1",
+    price: 100,
+    gender: "masculin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/201",
+      "https://picsum.photos/301",
+      "https://picsum.photos/401",
+    ],
+    title: "Alina 2",
+    description: "Descriere produs 2",
+    price: 200,
+    gender: "feminin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/202",
+      "https://picsum.photos/302",
+      "https://picsum.photos/402",
+    ],
+    title: "Anca 3",
+    description: "Descriere produs 3",
+    price: 1000,
+    gender: "feminin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/203",
+      "https://picsum.photos/303",
+      "https://picsum.photos/403",
+    ],
+    title: "Bianca 4",
+    description: "Descriere produs 4",
+    price: 300,
+    gender: "feminin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/204",
+      "https://picsum.photos/304",
+      "https://picsum.photos/404",
+    ],
+    title: "Cristina 5",
+    description: "Descriere produs 5",
+    price: 300,
+    gender: "feminin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/205",
+      "https://picsum.photos/305",
+      "https://picsum.photos/405",
+    ],
+    title: "Danut 6",
+    description: "Descriere produs 6",
+    price: 900,
+    gender: "masculin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/206",
+      "https://picsum.photos/306",
+      "https://picsum.photos/406",
+    ],
+    title: "Sita 7",
+    description: "Descriere produs 7",
+    price: 700,
+    gender: "feminin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/207",
+      "https://picsum.photos/307",
+      "https://picsum.photos/407",
+    ],
+    title: "Ionut 8",
+    description: "Descriere produs 8",
+    price: 300,
+    gender: "masculin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/208",
+      "https://picsum.photos/308",
+      "https://picsum.photos/408",
+    ],
+    title: "Cornel 9",
+    description: "Descriere produs 9",
+    price: 500,
+    gender: "masculin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/209",
+      "https://picsum.photos/309",
+      "https://picsum.photos/409",
+    ],
+    title: "Ionel 10",
+    description: "Descriere produs 10",
+    price: 300,
+    gender: "masculin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/2010",
+      "https://picsum.photos/3010",
+      "https://picsum.photos/4010",
+    ],
+    title: "Laviniu 11",
+    description: "Descriere produs 11",
+    price: 300,
+    gender: "masculin",
+  },
+  {
+    id: uuidv4(),
+    images: [
+      "https://picsum.photos/211",
+      "https://picsum.photos/311",
+      "https://picsum.photos/411",
+    ],
+    title: "Valeriu 12",
+    description: "Descriere produs 12",
+    price: 600,
+    gender: "masculin",
+  },
+];

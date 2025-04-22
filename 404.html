@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      console.log("Procesăm 404.html, URL inițial:", window.location.href);
+
+      if (window.location.hash) {
+        // 🔹 Generăm query string-ul și verificăm
+        const query = window.location.hash.replace("#/", "").replace("#", "?");
+        console.log("Query generat:", query);
+
+        // 🔹 Construim URL-ul final
+        const newUrl = window.location.origin + "/dan-store/index.html" + query;
+        console.log("Redirecționăm către:", newUrl);
+
+        window.location.replace(newUrl); // `replace` pentru evitarea ciclurilor.
+      } else {
+        // 🔹 Dacă nu există hash, revenim la pagina principală
+        console.log(
+          "Fără hash detectat. Redirecționăm către pagina principală."
+        );
+        const fallbackUrl = window.location.origin + "/dan-store/index.html";
+        window.location.replace(fallbackUrl);
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Redirecting...</h1>
+  </body>
+</html>

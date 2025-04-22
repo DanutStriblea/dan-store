@@ -1,0 +1,14 @@
+#Acest fisier normalizeaza linia de final a fisierelor text pt github 
+
+
+# Normalize line endings for all text files
+* text=auto
+
+# Explicitly set line endings for specific file types
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.env text eol=lf

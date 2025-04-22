@@ -155,7 +155,11 @@ const FinalOrderDetails = () => {
             Introduceți datele cardului
           </h2>
           <Elements stripe={stripePromise}>
-            <FinalPaymentForm orderId={orderId} amount={totalAmount} />
+            <FinalPaymentForm
+              orderId={orderId}
+              amount={totalAmount}
+              onClose={() => setShowPaymentForm(false)}
+            />
           </Elements>
         </div>
       )}

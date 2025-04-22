@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
+    "start-server": "node server.js",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {

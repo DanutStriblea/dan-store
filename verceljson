@@ -1,0 +1,18 @@
+{
+  "builds": [
+    {
+      "src": "api/create-setup-intent.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/create-payment-intent.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}

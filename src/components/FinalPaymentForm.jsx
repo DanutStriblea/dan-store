@@ -56,14 +56,18 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
     const cardNumberElement = elements.getElement(CardNumberElement);
 
     try {
-      // Fluxul de salvare a cardului cu SetupIntent
+      // Dacă utilizatorul dorește să salveze cardul, folosim fluxul SetupIntent
       if (saveCard) {
-        // Apelăm endpoint-ul pentru SetupIntent – folosim acum URL-ul corect fără prefixul "/dan-store"
-        const setupResponse = await fetch("/api/create-setup-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
+        // Apelăm endpoint-ul pentru SetupIntent (observă că folosim prefixul /dan-store/ dacă acesta e setat în proiect)
+        const setupResponse = await fetch(
+          "/dan-store/api/create-setup-intent",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            // Poți trimite și alte date dacă dorești; aici trimitem un obiect gol
+            body: JSON.stringify({}),
+          }
+        );
         const setupData = await setupResponse.json();
         if (!setupResponse.ok || !setupData.clientSecret) {
           throw new Error(setupData.error || "Eroare la crearea SetupIntent.");
@@ -93,11 +97,14 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         // Fluxul standard pentru procesarea plății cu PaymentIntent
         const convertedAmount = Math.round(amount * 100);
         console.log("Amount convertit (în subunități):", convertedAmount);
-        const paymentResponse = await fetch("/api/create-payment-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: convertedAmount, orderId }),
-        });
+        const paymentResponse = await fetch(
+          "/dan-store/api/create-payment-intent",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ amount: convertedAmount, orderId }),
+          }
+        );
         const paymentData = await paymentResponse.json();
         if (!paymentResponse.ok || !paymentData.clientSecret) {
           throw new Error(

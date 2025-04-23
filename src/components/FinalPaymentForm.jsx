@@ -95,7 +95,7 @@ const CustomPaymentForm = ({ orderId, amount, onClose }) => {
         {/* Butonul "X" în dreapta sus */}
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-600 hover:text-gray-800 text-2xl font-bold"
+          className="absolute top-1 right-3 text-gray-600 hover:text-gray-800 text-2xl"
         >
           &times;
         </button>

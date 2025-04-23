@@ -37,13 +37,14 @@ const CustomPaymentForm = ({ orderId, amount, onClose }) => {
       const convertedAmount = Math.round(amount * 100);
       console.log("Amount convertit în bani:", convertedAmount);
 
-      // Apel către backend pentru a crea PaymentIntent, folosind endpoint-ul relativ (nu localhost)
+      // Apel către backend pentru a crea PaymentIntent, folosind endpoint-ul relativ
       const response = await fetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: convertedAmount, orderId }),
       });
 
+      // Încearcă să citești răspunsul ca JSON
       const data = await response.json();
 
       if (!response.ok || !data.clientSecret) {

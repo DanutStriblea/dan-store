@@ -43,7 +43,7 @@ const FinalOrderDetails = () => {
           Ne pare rău, se pare că datele comenzii nu au fost transmise corect.
         </p>
         <button
-          className="mt-4 bg-blue-600 text-white py-2 px-4 rounded"
+          className="mt-4 bg-sky-800 text-white py-2 px-4 rounded"
           onClick={() => navigate("/order-details")}
         >
           Înapoi la Detalii Comandă

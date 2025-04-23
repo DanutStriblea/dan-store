@@ -35,7 +35,7 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
       const id = paymentMethod;
       const { error } = await supabase.from("saved_cards").insert([
         {
-          payment_method_id: id,
+          card_id: id, // modificare: folosește "card_id" în loc de "payment_method_id"
           card_brand: null,
           card_last4: null,
           exp_month: null,
@@ -57,7 +57,7 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
     const { id, card } = paymentMethod;
     const { error } = await supabase.from("saved_cards").insert([
       {
-        payment_method_id: id,
+        card_id: id, // modificare: folosește "card_id" în loc de "payment_method_id"
         card_brand: card.brand,
         card_last4: card.last4,
         exp_month: card.exp_month,
@@ -164,7 +164,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
     }
     setIsProcessing(false);
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />

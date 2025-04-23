@@ -19,11 +19,41 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [cardholderName, setCardholderName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  // State pentru opțiunea de salvare a cardului
   const [saveCard, setSaveCard] = useState(false);
 
-  // Funcție care salvează datele cardului în tabelul "saved_cards" din Supabase
+  // Funcție pentru salvarea cardului în Supabase
   const saveCardInDatabase = async (paymentMethod) => {
+    console.log("PaymentMethod primit:", paymentMethod);
+
+    // Dacă nu avem niciun obiect, aruncăm eroare
+    if (!paymentMethod) {
+      throw new Error("PaymentMethod invalid primit pentru salvare.");
+    }
+
+    // Dacă paymentMethod este un string (ID-ul PaymentMethod), nu avem detaliile cardului
+    if (typeof paymentMethod === "string") {
+      const id = paymentMethod;
+      const { error } = await supabase.from("saved_cards").insert([
+        {
+          payment_method_id: id,
+          card_brand: null,
+          card_last4: null,
+          exp_month: null,
+          exp_year: null,
+        },
+      ]);
+      if (error) {
+        console.error("Eroare la salvarea cardului în DB:", error.message);
+      } else {
+        console.log("Card salvat cu succes în DB!", id);
+      }
+      return;
+    }
+
+    // Dacă paymentMethod este un obiect dar fără proprietatea "card"
+    if (!paymentMethod.card) {
+      throw new Error("PaymentMethod invalid primit pentru salvare.");
+    }
     const { id, card } = paymentMethod;
     const { error } = await supabase.from("saved_cards").insert([
       {
@@ -52,13 +82,11 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
     setIsProcessing(true);
     setErrorMessage(null);
 
-    // Obține elementul cardului
     const cardNumberElement = elements.getElement(CardNumberElement);
 
     try {
-      // Fluxul de salvare a cardului cu SetupIntent
       if (saveCard) {
-        // Apelăm endpoint-ul pentru SetupIntent – folosim acum URL-ul corect fără prefixul "/dan-store"
+        // Apelăm endpoint-ul pentru SetupIntent
         const setupResponse = await fetch("/api/create-setup-intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,12 +110,17 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         if (confirmError) {
           throw new Error(confirmError.message);
         }
+        console.log("SetupIntent primit:", setupIntent);
+
+        // Plata se poate întoarce ca obiect sau ca ID; salvăm oricum
+        if (!setupIntent || !setupIntent.payment_method) {
+          throw new Error("SetupIntent nu a returnat un PaymentMethod valid.");
+        }
         console.log(
-          "SetupIntent confirmat, PaymentMethod:",
+          "PaymentMethod extras din SetupIntent:",
           setupIntent.payment_method
         );
 
-        // Salvează PaymentMethod-ul în baza de date (tabelul saved_cards)
         await saveCardInDatabase(setupIntent.payment_method);
       } else {
         // Fluxul standard pentru procesarea plății cu PaymentIntent
@@ -107,7 +140,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         const paymentClientSecret = paymentData.clientSecret;
         console.log("PaymentIntent Client Secret:", paymentClientSecret);
 
-        // Confirmăm PaymentIntent (procesul de plată propriu-zis)
         const { error: confirmError, paymentIntent } =
           await stripe.confirmCardPayment(paymentClientSecret, {
             payment_method: {
@@ -121,7 +153,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         console.log("Plată confirmată:", paymentIntent);
       }
 
-      // După finalizarea oricărui flux, redirecționează utilizatorul către pagina de confirmare
       navigate(
         `/order-confirmation?orderId=${orderId}&email=${encodeURIComponent(
           cardholderName
@@ -136,18 +167,14 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay cu fundal întunecat */}
-      <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
-
+      <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />
       <div className="relative z-10 w-full max-w-sm">
-        {/* Butonul de închidere */}
         <button
           onClick={onClose}
           className="absolute top-1 right-3 text-gray-500 hover:text-gray-800 text-2xl"
         >
           &times;
         </button>
-
         <form
           onSubmit={handleSubmit}
           className="mx-auto p-6 border rounded shadow bg-white"
@@ -171,7 +198,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
               </div>
             </div>
           </div>
-
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">
               Nume deținător card
@@ -184,14 +210,12 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
               className="w-full h-10 p-2 border rounded bg-gray-100 shadow-sm focus:outline-none"
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Număr card</label>
             <div className="p-2 border rounded bg-gray-100 shadow-sm focus:outline-none">
               <CardNumberElement options={{ placeholder: " " }} />
             </div>
           </div>
-
           <div className="mb-4 flex space-x-4">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">
@@ -210,13 +234,11 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
               </div>
             </div>
           </div>
-
           <div className="mb-4">
             <p className="text-sm text-gray-600">
               Sumă: {amount ? amount.toFixed(2) : "0.00"} RON
             </p>
           </div>
-
           <div className="mb-4">
             <label className="flex items-center">
               <input
@@ -230,8 +252,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
               </span>
             </label>
           </div>
-
-          {/* Checkbox pentru salvarea cardului */}
           <div className="mb-4">
             <label className="flex items-center">
               <input
@@ -245,11 +265,9 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
               </span>
             </label>
           </div>
-
           {errorMessage && (
             <div className="mb-4 text-red-600">{errorMessage}</div>
           )}
-
           <button
             type="submit"
             disabled={!stripe || isProcessing}

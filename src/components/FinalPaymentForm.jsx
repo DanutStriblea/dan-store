@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Importăm useNavigate
 import {
   CardNumberElement,
   CardExpiryElement,
@@ -8,38 +8,16 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import PropTypes from "prop-types";
-import { supabase } from "../supabaseClient";
 
-const FinalPaymentForm = ({ orderId, amount, onClose }) => {
+const CustomPaymentForm = ({ orderId, amount, onClose }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Inițializez hook-ul useNavigate
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [cardholderName, setCardholderName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  // State pentru opțiunea de salvare a cardului
-  const [saveCard, setSaveCard] = useState(false);
-
-  // Funcție care salvează datele cardului în tabelul "saved_cards" din Supabase
-  const saveCardInDatabase = async (paymentMethod) => {
-    const { id, card } = paymentMethod;
-    const { error } = await supabase.from("saved_cards").insert([
-      {
-        payment_method_id: id,
-        card_brand: card.brand,
-        card_last4: card.last4,
-        exp_month: card.exp_month,
-        exp_year: card.exp_year,
-      },
-    ]);
-    if (error) {
-      console.error("Eroare la salvarea cardului în DB:", error.message);
-    } else {
-      console.log("Card salvat cu succes în DB!");
-    }
-  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -52,83 +30,50 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
     setIsProcessing(true);
     setErrorMessage(null);
 
-    // Obține elementul cardului
     const cardNumberElement = elements.getElement(CardNumberElement);
 
     try {
-      // Dacă utilizatorul dorește să salveze cardul, folosim fluxul SetupIntent
-      if (saveCard) {
-        // Apelăm endpoint-ul pentru SetupIntent (observă că folosim prefixul /dan-store/ dacă acesta e setat în proiect)
-        const setupResponse = await fetch(
-          "/dan-store/api/create-setup-intent",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            // Poți trimite și alte date dacă dorești; aici trimitem un obiect gol
-            body: JSON.stringify({}),
-          }
-        );
-        const setupData = await setupResponse.json();
-        if (!setupResponse.ok || !setupData.clientSecret) {
-          throw new Error(setupData.error || "Eroare la crearea SetupIntent.");
-        }
-        const setupClientSecret = setupData.clientSecret;
-        console.log("SetupIntent Client Secret:", setupClientSecret);
+      // Convertim amount la bani (Stripe cere ca suma să fie în subunități)
+      const convertedAmount = Math.round(amount * 100);
+      console.log("Amount convertit în bani:", convertedAmount);
 
-        // Confirmăm SetupIntent pentru a salva cardul
-        const { error: confirmError, setupIntent } =
-          await stripe.confirmCardSetup(setupClientSecret, {
-            payment_method: {
-              card: cardNumberElement,
-              billing_details: { name: cardholderName },
-            },
-          });
-        if (confirmError) {
-          throw new Error(confirmError.message);
-        }
-        console.log(
-          "SetupIntent confirmat, PaymentMethod:",
-          setupIntent.payment_method
-        );
+      // Apel către backend pentru a crea PaymentIntent, folosind endpoint-ul relativ
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: convertedAmount, orderId }),
+      });
 
-        // Salvează PaymentMethod-ul în baza de date (tabelul saved_cards)
-        await saveCardInDatabase(setupIntent.payment_method);
-      } else {
-        // Fluxul standard pentru procesarea plății cu PaymentIntent
-        const convertedAmount = Math.round(amount * 100);
-        console.log("Amount convertit (în subunități):", convertedAmount);
-        const paymentResponse = await fetch(
-          "/dan-store/api/create-payment-intent",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount: convertedAmount, orderId }),
-          }
-        );
-        const paymentData = await paymentResponse.json();
-        if (!paymentResponse.ok || !paymentData.clientSecret) {
-          throw new Error(
-            paymentData.error || "Eroare la crearea PaymentIntent."
-          );
-        }
-        const paymentClientSecret = paymentData.clientSecret;
-        console.log("PaymentIntent Client Secret:", paymentClientSecret);
+      // Încearcă să citești răspunsul ca JSON
+      const data = await response.json();
 
-        // Confirmăm PaymentIntent (procesul de plată propriu-zis)
-        const { error: confirmError, paymentIntent } =
-          await stripe.confirmCardPayment(paymentClientSecret, {
-            payment_method: {
-              card: cardNumberElement,
-              billing_details: { name: cardholderName },
-            },
-          });
-        if (confirmError) {
-          throw new Error(confirmError.message);
-        }
-        console.log("Plată confirmată:", paymentIntent);
+      if (!response.ok || !data.clientSecret) {
+        throw new Error(data.error || "Eroare la crearea PaymentIntent.");
       }
 
-      // După finalizarea oricărui flux, redirecționează utilizatorul către pagina de confirmare
+      const clientSecret = data.clientSecret;
+      console.log("Client Secret primit:", clientSecret);
+
+      // Confirmă plata cu Stripe
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardNumberElement,
+            billing_details: {
+              name: cardholderName,
+            },
+          },
+        }
+      );
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log("Plată confirmată:", paymentIntent);
+
+      // Redirecționează utilizatorul către pagina de confirmare folosind useNavigate
       navigate(
         `/order-confirmation?orderId=${orderId}&email=${encodeURIComponent(
           cardholderName
@@ -143,11 +88,12 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay cu fundal întunecat */}
+      {/* Overlay cu fundal întunecat și efect de blur */}
       <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
 
+      {/* Containerul popup-ului; lățime puțin mai îngustă */}
       <div className="relative z-10 w-full max-w-sm">
-        {/* Butonul de închidere */}
+        {/* Butonul "X" în dreapta sus */}
         <button
           onClick={onClose}
           className="absolute top-1 right-3 text-gray-500 hover:text-gray-800 text-2xl"
@@ -159,6 +105,7 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
           onSubmit={handleSubmit}
           className="mx-auto p-6 border rounded shadow bg-white"
         >
+          {/* Antet: Text și logo-uri aliniate */}
           <div className="mb-6">
             <div className="flex items-center space-x-7">
               <h3 className="text-xl font-bold text-sky-900">
@@ -238,21 +185,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
             </label>
           </div>
 
-          {/* Checkbox pentru salvarea cardului */}
-          <div className="mb-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={saveCard}
-                onChange={(e) => setSaveCard(e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-400">
-                Salvează acest card pentru plăți viitoare
-              </span>
-            </label>
-          </div>
-
           {errorMessage && (
             <div className="mb-4 text-red-600">{errorMessage}</div>
           )}
@@ -270,10 +202,10 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
   );
 };
 
-FinalPaymentForm.propTypes = {
+CustomPaymentForm.propTypes = {
   orderId: PropTypes.string.isRequired,
   amount: PropTypes.number.isRequired,
   onClose: PropTypes.func.isRequired,
 };
 
-export default FinalPaymentForm;
+export default CustomPaymentForm;

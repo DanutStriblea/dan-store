@@ -10,27 +10,31 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export default async function handler(req, res) {
+  // Acceptăm doar metodele POST
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-  try {
-    // Creăm un client în Stripe (aici, pentru test, folosim o adresă de email statică, dar în producție ar trebui să fie pe baza utilizatorului curent)
-    const customer = await stripe.customers.create({
-      email: "test@example.com",
-    });
 
-    // Creează SetupIntent pentru a salva metoda de plată, specificând și customer
+  try {
+    // Pentru un sistem de producție ar trebui să folosești customer-ul deja identificat
+    // – aici, dacă clientul furnizează un email în corpul cererii, folosim acel email,
+    // altfel folosim un email de test.
+    const email = req.body.email || "test@example.com";
+    const customer = await stripe.customers.create({ email });
+
+    // Creăm SetupIntent pentru a salva metoda de plată,
+    // asociind setup-ul cu customer-ul identificat și extinzând PaymentMethod-ul
     const setupIntent = await stripe.setupIntents.create({
       usage: "off_session",
       customer: customer.id,
-      // Opțional: extinde PaymentMethod pentru a primi un obiect complet
       expand: ["payment_method"],
     });
 
+    // Returnăm clientSecret-ul necesar pentru confirmarea pe client
     return res.status(200).json({ clientSecret: setupIntent.client_secret });
   } catch (err) {
-    console.error("Eroare la crearea SetupIntent:", err);
-    return res.status(500).json({ error: "Eroare la crearea SetupIntent." });
+    console.error("Error creating SetupIntent:", err);
+    return res.status(500).json({ error: "Error creating SetupIntent." });
   }
 }

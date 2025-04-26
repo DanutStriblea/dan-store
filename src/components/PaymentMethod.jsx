@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
-const PaymentMethod = ({ orderId, onPaymentSelected }) => {
+const PaymentMethod = ({ orderId }) => {
   const [paymentMethod, setPaymentMethod] = useState("Card");
-  const [savedCards, setSavedCards] = useState([]);
+  const [savedCards, setSavedCards] = useState([]); // Vom stoca cardurile salvate aici
   const [selectedCard, setSelectedCard] = useState(null);
 
   // Preluăm cardurile salvate din tabela "saved_cards"
   useEffect(() => {
     const fetchSavedCards = async () => {
-      // Preluăm toate cardurile; poți filtra după utilizator dacă e necesar.
+      // Poți filtra după utilizator dacă ai un câmp user_id asociat cardurilor,
+      // dar aici preluăm toate cardurile pentru simplitate.
       const { data, error } = await supabase
         .from("saved_cards")
         .select("*")
@@ -27,9 +28,10 @@ const PaymentMethod = ({ orderId, onPaymentSelected }) => {
     };
 
     fetchSavedCards();
-  }, [orderId]);
+  }, []);
 
-  // Actualizează order_details și notifică componenta părinte cu metoda de plată selectată
+  // Actualizează order_details cu metoda de plată și cardul selectat
+  // Dacă se alege "Card" și se selectează un card existent, se trimite id-ul cardului.
   useEffect(() => {
     const updatePaymentData = async () => {
       if (!orderId) {
@@ -48,27 +50,16 @@ const PaymentMethod = ({ orderId, onPaymentSelected }) => {
       if (error) {
         console.error("Eroare la actualizarea metodei de plată:", error);
       } else {
-        console.log("Update-ul metodei de plată a fost realizat cu succes!");
+        console.log("Update-ul a fost realizat cu succes!");
       }
     };
 
     updatePaymentData();
-
-    if (onPaymentSelected) {
-      let summaryText = "";
-      if (paymentMethod === "Card") {
-        summaryText =
-          selectedCard === "newCard" ? "Card (nou)" : "Card (salvat)";
-      } else if (paymentMethod === "Ramburs") {
-        summaryText = "Ramburs la curier";
-      }
-      onPaymentSelected(summaryText);
-    }
-  }, [paymentMethod, selectedCard, orderId, onPaymentSelected]);
+  }, [paymentMethod, selectedCard, orderId]);
 
   return (
     <div className="mb-6 border rounded-md p-4 bg-gray-50 shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Metoda plată</h2>
+      <h2 className="text-xl font-semibold mb-4">3. Modalitate de plată</h2>
 
       {/* Opțiunea: Card online */}
       <div className="mb-4">
@@ -160,7 +151,6 @@ const PaymentMethod = ({ orderId, onPaymentSelected }) => {
 
 PaymentMethod.propTypes = {
   orderId: PropTypes.string.isRequired,
-  onPaymentSelected: PropTypes.func,
 };
 
 export default PaymentMethod;

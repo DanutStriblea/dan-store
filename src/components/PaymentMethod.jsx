@@ -69,7 +69,7 @@ const PaymentMethod = ({ orderId }) => {
       }
 
       const payload = { payment_method: paymentMethod };
-      // Actualizăm card_encrypted_data doar dacă se folosește "newCard"
+      // Actualizăm card_encrypted_data doar dacă se folosește "newCard".
       if (paymentMethod === "Card" && selectedCard === "newCard") {
         payload.card_encrypted_data = selectedCard;
       }

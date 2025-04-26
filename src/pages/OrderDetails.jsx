@@ -1,3 +1,4 @@
+// OrderDetails.jsx
 import { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -8,6 +9,7 @@ import PaymentMethod from "../components/PaymentMethod";
 import OrderSummary from "../components/OrderSummary";
 import { supabase } from "../supabaseClient";
 
+// Funcție pentru inițializarea orderId
 const initializeOrderId = async (setOrderId, setLoading) => {
   let tempOrderId = localStorage.getItem("tempOrderId");
   if (!tempOrderId) {
@@ -42,7 +44,6 @@ const initializeOrderId = async (setOrderId, setLoading) => {
 };
 
 const OrderDetails = () => {
-  // Hook pentru navigare
   const navigate = useNavigate();
   const [orderId, setOrderId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,9 +60,10 @@ const OrderDetails = () => {
   const [deliveryMethod, setDeliveryMethod] = useState("courier");
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [billingAddress, setBillingAddress] = useState(null);
-  // Stările legate de plată – aceste valori vor fi transmise mai departe
+
+  // Stări legate de plată – acestea sunt setate din PaymentMethod.jsx prin props
   const [paymentMethod, setPaymentMethod] = useState("Card"); // Valoare default: "Card"
-  const [cardType, setCardType] = useState("newCard"); // Presupunem că se dorește introducerea unui nou card
+  const [cardType, setCardType] = useState("newCard"); // Presupunem implicit că se dorește introducerea unui nou card
 
   useEffect(() => {
     const forceSyncData = async () => {
@@ -97,7 +99,7 @@ const OrderDetails = () => {
     );
   }
 
-  // Funcția de navigare care transmite datele către FinalOrderDetails
+  // Funcția de navigare către FinalOrderDetails
   const handleNextStep = () => {
     console.log("Navigare către FinalOrderDetails:", {
       orderId,
@@ -118,6 +120,27 @@ const OrderDetails = () => {
       return;
     }
 
+    // Pentru persistență, citim valorile din localStorage (dacă au fost salvate în PaymentMethod)
+    // Dacă nu sunt salvate, folosim valorile din state
+    const storedPaymentMethod =
+      localStorage.getItem("paymentMethod") || paymentMethod;
+    const storedCardType = localStorage.getItem("selectedCard") || cardType;
+
+    // Construim un paymentSummary pe baza valorilor:
+    let computedPaymentSummary = "";
+    if (storedPaymentMethod === "Card") {
+      if (storedCardType === "newCard") {
+        computedPaymentSummary = "Plătește cu alt card";
+      } else {
+        // Dacă este un card salvate, poți prelua și detaliile. Pentru simplitate, folosim un mesaj standard.
+        computedPaymentSummary = "Card salvat";
+      }
+    } else if (storedPaymentMethod === "Ramburs") {
+      computedPaymentSummary = "Ramburs la curier";
+    } else {
+      computedPaymentSummary = storedPaymentMethod;
+    }
+
     navigate("/final-order-details", {
       state: {
         orderId,
@@ -125,8 +148,9 @@ const OrderDetails = () => {
           deliveryAddress: selectedAddress,
           billingAddress: billingAddress,
         },
-        paymentMethod,
-        cardType,
+        paymentMethod: storedPaymentMethod,
+        cardType: storedCardType,
+        paymentSummary: computedPaymentSummary,
       },
     });
   };
@@ -161,7 +185,6 @@ const OrderDetails = () => {
       />
       <OrderSummary deliveryCost={25} orderId={orderId} />
 
-      {/* Butonul "Pasul următor" existent */}
       <button
         onClick={handleNextStep}
         className="mt-1 w-full bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"

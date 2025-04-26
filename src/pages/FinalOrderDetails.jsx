@@ -30,11 +30,11 @@ const FinalOrderDetails = () => {
   const navigate = useNavigate();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
-  // Extragem datele din location.state. Se așteaptă ca acestea să fie transmise din pagina anterioară:
-  // orderId, orderData, paymentMethod și cardType.
-  // Pentru cardurile salvate, se presupune că orderData.card_encrypted_data conține ID-ul cardului salvat
-  // din Stripe.
-  const { orderId, orderData, paymentMethod, cardType } = location.state || {};
+  // Extragem datele din location.state.
+  // Se așteaptă ca acestea să fie transmise din pagina anterioară:
+  // orderId, orderData, paymentMethod, cardType și paymentSummary.
+  const { orderId, orderData, paymentMethod, cardType, paymentSummary } =
+    location.state || {};
 
   if (!orderId || !orderData || !paymentMethod || !cardType) {
     return (
@@ -63,24 +63,18 @@ const FinalOrderDetails = () => {
   const deliveryCost = 25; // Costul livrării
   const totalAmount = totalProductCost + deliveryCost; // suma totală în RON
 
-  // Funcția de navigare pentru butonul "Trimite Comanda"
+  // Funcția de navigare pentru butonul "Trimite Comandă"
   const handleSubmitOrder = async () => {
     console.log("Trimitem comanda pentru orderId:", orderId);
 
-    // Dacă metoda de plată este Card și se folosește un card nou, se afișează formularul de introducere a datelor.
     if (paymentMethod === "Card" && cardType === "newCard") {
       setShowPaymentForm(true);
-    }
-    // Dacă se folosește un card salvat, atunci folosim direct endpoint-ul pentru plată
-    else if (paymentMethod === "Card" && cardType === "savedCard") {
+    } else if (paymentMethod === "Card" && cardType === "savedCard") {
       try {
-        // Se presupune că în orderData (sau în câmpul actualizat din order_details)
-        // există ID-ul cardului salvat în card_encrypted_data.
         const selectedSavedCard = orderData.card_encrypted_data;
         if (!selectedSavedCard) {
           throw new Error("Nu a fost selectat niciun card salvat.");
         }
-        // Convertim suma în subunități (ex.: RON * 100)
         const convertedAmount = Math.round(totalAmount * 100);
         const response = await fetch("/api/create-payment-intent-saved", {
           method: "POST",
@@ -98,24 +92,17 @@ const FinalOrderDetails = () => {
           );
         }
         console.log("Plată procesată cu succes:", data.paymentIntent);
-        // Dacă plata este procesată cu succes, navigăm către pagina de confirmare a comenzii.
         navigate(`/order-confirmation?orderId=${orderId}`);
       } catch (err) {
         console.error("Eroare la procesarea plății:", err.message);
-        // Aici poți afișa un mesaj de eroare pentru utilizator.
       }
-    }
-    // Dacă metoda de plată este Ramburs, procesăm comanda diferit.
-    else if (paymentMethod === "Ramburs") {
-      console.log(
-        "Procesăm comanda și livrarea la curier pentru orderId:",
-        orderId
-      );
+    } else if (paymentMethod === "Ramburs") {
+      console.log("Procesăm comanda Ramburs pentru orderId:", orderId);
       navigate(`/order-confirmation?orderId=${orderId}`);
     }
   };
 
-  // Funcția handleModifica: navighează la pagina de Order Details pentru a modifica secțiunea dorită.
+  // Funcția handleModifica: navighează la pagina de OrderDetails pentru a modifica selecția
   const handleModifica = (section) => {
     navigate("/order-details", { state: { section } });
   };
@@ -124,8 +111,9 @@ const FinalOrderDetails = () => {
     <div className="max-w-3xl mx-auto bg-blue-100 p-6">
       <h1 className="text-2xl text-sky-900 font-bold mb-6">Rezumat Comandă</h1>
 
-      {/* Rândul superior: 3 carduri separate */}
+      {/* Grid cu 3 carduri: Adresa livrare, Adresa facturare și Metoda plată */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Adresa livrare */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
             <h2 className="text-base font-semibold mb-1">Adresa livrare</h2>
@@ -134,12 +122,14 @@ const FinalOrderDetails = () => {
             </p>
           </div>
           <button
-            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 active:scale-95 transition duration-200 text-sm"
+            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 transition duration-200 text-sm"
             onClick={() => handleModifica("delivery")}
           >
             Modifică
           </button>
         </div>
+
+        {/* Adresa facturare */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
             <h2 className="text-base font-semibold mb-1">Adresa facturare</h2>
@@ -148,23 +138,27 @@ const FinalOrderDetails = () => {
             </p>
           </div>
           <button
-            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 active:scale-95 transition duration-200 text-sm"
+            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 transition duration-200 text-sm"
             onClick={() => handleModifica("billing")}
           >
             Modifică
           </button>
         </div>
+
+        {/* Metoda plată */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
             <h2 className="text-base font-semibold mb-1">Metoda plată</h2>
             <p className="text-xs text-gray-500 mb-2">
-              {paymentMethod === "Card"
+              {paymentSummary
+                ? paymentSummary
+                : paymentMethod === "Card"
                 ? `Card (${cardType === "newCard" ? "nou" : "salvat"})`
                 : paymentMethod}
             </p>
           </div>
           <button
-            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 active:scale-95 transition duration-200 text-sm"
+            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 transition duration-200 text-sm"
             onClick={() => handleModifica("payment")}
           >
             Modifică
@@ -182,7 +176,7 @@ const FinalOrderDetails = () => {
         />
       </div>
 
-      {/* Butonul "Trimite Comanda" */}
+      {/* Butonul "Trimite Comandă" */}
       <div className="flex justify-center mt-4">
         <button
           className="w-60 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
@@ -192,12 +186,12 @@ const FinalOrderDetails = () => {
         </button>
       </div>
 
-      {/* Formularul Stripe pentru datele cardului (afișat doar pentru carduri noi) */}
+      {/* Formularul Stripe pentru carduri noi (afișat doar pentru carduri noi) */}
       {showPaymentForm &&
         paymentMethod === "Card" &&
         cardType === "newCard" && (
           <div className="mt-6">
-            <h2 className="text-l text-center text-gray-600 ml-2 font-bold mb-2">
+            <h2 className="text-l text-center text-gray-600 font-bold mb-2">
               Introduceți datele cardului
             </h2>
             <Elements stripe={stripePromise}>

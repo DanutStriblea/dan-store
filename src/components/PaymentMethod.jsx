@@ -1,38 +1,42 @@
-// PaymentMethod.jsx
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
 const PaymentMethod = ({ orderId }) => {
   const [paymentMethod, setPaymentMethod] = useState("Card");
-  // “selectedCard” va fi "savedCard" dacă e cel salvat sau "newCard" pentru opțiunea de alt card
+  // savedCards va conține lista de carduri din tabela "saved_cards"
+  const [savedCards, setSavedCards] = useState([]);
+  // selectedCard: dacă se selectează un card existent, va fi id-ul acelui card;
+  // dacă se selectează opțiunea "newCard", va fi "newCard".
   const [selectedCard, setSelectedCard] = useState("savedCard");
-  const [cardDetails, setCardDetails] = useState(null);
 
-  // Preluăm detaliile cardului din order_details
+  // Folosim useEffect pentru a prelua cardurile salvate din tabela "saved_cards"
   useEffect(() => {
-    const fetchCardDetails = async () => {
+    const fetchSavedCards = async () => {
       if (!orderId) {
         console.warn("orderId nu este definit!");
         return;
       }
+      // Interogăm tabelul "saved_cards". Poți filtra după utilizator dacă este necesar.
       const { data, error } = await supabase
-        .from("order_details")
-        .select("card_encrypted_data")
-        .eq("id", orderId)
-        .single();
-
+        .from("saved_cards")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) {
-        console.error("Eroare la preluarea detaliilor cardului:", error);
+        console.error("Eroare la preluarea cardurilor salvate:", error);
       } else {
-        setCardDetails(data.card_encrypted_data);
+        setSavedCards(data);
+        if (data.length > 0) {
+          // Implicit, dacă există carduri salvate, setăm primul card ca selectat
+          setSelectedCard(data[0].card_id);
+        }
       }
     };
 
-    fetchCardDetails();
+    fetchSavedCards();
   }, [orderId]);
 
-  // Actualizează order_details (nu actualizăm detaliile cardului dacă avem opțiunea "savedCard")
+  // Efect pentru actualizarea order_details – actualizăm doar datele relevante
   useEffect(() => {
     const updatePaymentData = async () => {
       console.log("Updating payment data:", {
@@ -44,9 +48,12 @@ const PaymentMethod = ({ orderId }) => {
         console.warn("orderId nu este definit!");
         return;
       }
+
       const payload = { payment_method: paymentMethod };
+      // Dacă se folosește "newCard", actualizăm și card_encrypted_data;
+      // dacă se folosește un card salvat, nu actualizăm (se presupune că datele există deja)
       if (paymentMethod === "Card" && selectedCard === "newCard") {
-        payload.card_encrypted_data = selectedCard; // Aceasta este o actualizare specifică pentru alt card
+        payload.card_encrypted_data = selectedCard; // Acesta ar putea fi adaptat în funcție de logica ta.
       }
 
       const { error } = await supabase
@@ -68,7 +75,7 @@ const PaymentMethod = ({ orderId }) => {
     <div className="mb-6 border rounded-md p-4 bg-gray-50 shadow-md">
       <h2 className="text-xl font-semibold mb-4">3. Modalitate de plată</h2>
 
-      {/* Opțiunea: Card online */}
+      {/* Div pentru Card online */}
       <div className="mb-4">
         <label className="flex items-center">
           <input
@@ -84,36 +91,41 @@ const PaymentMethod = ({ orderId }) => {
 
         {paymentMethod === "Card" && (
           <div className="pl-6 flex flex-col space-y-2 mt-2">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="selectedCard"
-                value="savedCard"
-                checked={selectedCard === "savedCard"}
-                onChange={() => setSelectedCard("savedCard")}
-                className="mr-2"
-              />
-              {cardDetails ? (
-                <div>
-                  <span>
-                    {cardDetails.brand} •••• {cardDetails.last4}
-                  </span>
-                  <span className="ml-2">
-                    Expira in{" "}
-                    {new Date(
-                      Number(cardDetails.exp_year),
-                      Number(cardDetails.exp_month) - 1
-                    ).toLocaleString("ro-RO", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              ) : (
-                "Card salvat"
-              )}
-            </label>
-            <label className="flex items-center">
+            {savedCards.length > 0 ? (
+              savedCards.map((card) => (
+                <label key={card.card_id} className="flex items-center">
+                  <input
+                    type="radio"
+                    name="selectedCard"
+                    value={card.card_id}
+                    checked={selectedCard === card.card_id}
+                    onChange={() => setSelectedCard(card.card_id)}
+                    className="mr-2"
+                  />
+                  <div>
+                    <span>
+                      {card.card_brand} •••• {card.card_last4}
+                    </span>
+                    <span className="ml-2">
+                      Expira in{" "}
+                      {new Date(
+                        Number(card.exp_year),
+                        Number(card.exp_month) - 1
+                      ).toLocaleString("ro-RO", {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-gray-600">
+                Nu există carduri salvate.
+              </p>
+            )}
+
+            <label className="flex items-center mt-2">
               <input
                 type="radio"
                 name="selectedCard"
@@ -128,7 +140,7 @@ const PaymentMethod = ({ orderId }) => {
         )}
       </div>
 
-      {/* Opțiunea: Ramburs la curier */}
+      {/* Div pentru Ramburs la curier */}
       <div>
         <label className="flex items-center">
           <input

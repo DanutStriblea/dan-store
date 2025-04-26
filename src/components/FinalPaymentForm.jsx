@@ -112,7 +112,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         }
         console.log("SetupIntent primit:", setupIntent);
 
-        // Plata se poate întoarce ca obiect sau ca ID; salvăm oricum
         if (!setupIntent || !setupIntent.payment_method) {
           throw new Error("SetupIntent nu a returnat un PaymentMethod valid.");
         }
@@ -121,7 +120,25 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
           setupIntent.payment_method
         );
 
-        await saveCardInDatabase(setupIntent.payment_method);
+        // Preluăm detaliile complete ale PaymentMethod-ului, dacă este necesar:
+        let fullPaymentMethod = setupIntent.payment_method;
+        if (typeof fullPaymentMethod === "string" || !fullPaymentMethod.card) {
+          const retrieveResponse = await fetch("/api/retrieve-payment-method", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentMethodId: fullPaymentMethod }),
+          });
+          const retrievedData = await retrieveResponse.json();
+          if (!retrieveResponse.ok || !retrievedData.card) {
+            throw new Error(
+              retrievedData.error || "Error retrieving PaymentMethod details."
+            );
+          }
+          fullPaymentMethod = retrievedData;
+        }
+        console.log("Full PaymentMethod details:", fullPaymentMethod);
+
+        await saveCardInDatabase(fullPaymentMethod);
       } else {
         // Fluxul standard pentru procesarea plății cu PaymentIntent
         const convertedAmount = Math.round(amount * 100);
@@ -164,6 +181,7 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
     }
     setIsProcessing(false);
   };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />

@@ -23,14 +23,17 @@ const formatAddress = (addressObj) => {
 };
 
 const FinalOrderDetails = () => {
-  // Apelăm useContext la început pentru a nu apela Hook-uri condițional!
+  // Preluăm articolele din coș
   const { cartItems } = useContext(CartContext);
 
   const location = useLocation();
   const navigate = useNavigate();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
-  // Extragem datele din location.state
+  // Extragem datele din location.state. Se așteaptă ca acestea să fie transmise din pagina anterioară:
+  // orderId, orderData, paymentMethod și cardType.
+  // Pentru cardurile salvate, se presupune că orderData.card_encrypted_data conține ID-ul cardului salvat
+  // din Stripe.
   const { orderId, orderData, paymentMethod, cardType } = location.state || {};
 
   if (!orderId || !orderData || !paymentMethod || !cardType) {
@@ -61,17 +64,58 @@ const FinalOrderDetails = () => {
   const totalAmount = totalProductCost + deliveryCost; // suma totală în RON
 
   // Funcția de navigare pentru butonul "Trimite Comanda"
-  const handleSubmitOrder = () => {
+  const handleSubmitOrder = async () => {
     console.log("Trimitem comanda pentru orderId:", orderId);
+
+    // Dacă metoda de plată este Card și se folosește un card nou, se afișează formularul de introducere a datelor.
     if (paymentMethod === "Card" && cardType === "newCard") {
       setShowPaymentForm(true);
-    } else {
-      console.log("Procesăm comanda pentru orderId:", orderId);
-      // Adaugă logica pentru finalizarea comenzii (apel către backend etc.)
+    }
+    // Dacă se folosește un card salvat, atunci folosim direct endpoint-ul pentru plată
+    else if (paymentMethod === "Card" && cardType === "savedCard") {
+      try {
+        // Se presupune că în orderData (sau în câmpul actualizat din order_details)
+        // există ID-ul cardului salvat în card_encrypted_data.
+        const selectedSavedCard = orderData.card_encrypted_data;
+        if (!selectedSavedCard) {
+          throw new Error("Nu a fost selectat niciun card salvat.");
+        }
+        // Convertim suma în subunități (ex.: RON * 100)
+        const convertedAmount = Math.round(totalAmount * 100);
+        const response = await fetch("/api/create-payment-intent-saved", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: convertedAmount,
+            orderId,
+            paymentMethodId: selectedSavedCard,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Eroare la procesarea plății cu cardul salvat."
+          );
+        }
+        console.log("Plată procesată cu succes:", data.paymentIntent);
+        // Dacă plata este procesată cu succes, navigăm către pagina de confirmare a comenzii.
+        navigate(`/order-confirmation?orderId=${orderId}`);
+      } catch (err) {
+        console.error("Eroare la procesarea plății:", err.message);
+        // Aici poți afișa un mesaj de eroare pentru utilizator.
+      }
+    }
+    // Dacă metoda de plată este Ramburs, procesăm comanda diferit.
+    else if (paymentMethod === "Ramburs") {
+      console.log(
+        "Procesăm comanda și livrarea la curier pentru orderId:",
+        orderId
+      );
+      navigate(`/order-confirmation?orderId=${orderId}`);
     }
   };
 
-  // Funcția handleModifica: navighează la OrderDetails, trimițând secțiunea de editare
+  // Funcția handleModifica: navighează la pagina de Order Details pentru a modifica secțiunea dorită.
   const handleModifica = (section) => {
     navigate("/order-details", { state: { section } });
   };
@@ -148,21 +192,23 @@ const FinalOrderDetails = () => {
         </button>
       </div>
 
-      {/* Formularul Stripe pentru datele cardului */}
-      {showPaymentForm && paymentMethod === "Card" && (
-        <div className="mt-6">
-          <h2 className="text-l text-center text-gray-600 ml-2 font-bold mb-2">
-            Introduceți datele cardului
-          </h2>
-          <Elements stripe={stripePromise}>
-            <FinalPaymentForm
-              orderId={orderId}
-              amount={totalAmount}
-              onClose={() => setShowPaymentForm(false)}
-            />
-          </Elements>
-        </div>
-      )}
+      {/* Formularul Stripe pentru datele cardului (afișat doar pentru carduri noi) */}
+      {showPaymentForm &&
+        paymentMethod === "Card" &&
+        cardType === "newCard" && (
+          <div className="mt-6">
+            <h2 className="text-l text-center text-gray-600 ml-2 font-bold mb-2">
+              Introduceți datele cardului
+            </h2>
+            <Elements stripe={stripePromise}>
+              <FinalPaymentForm
+                orderId={orderId}
+                amount={totalAmount}
+                onClose={() => setShowPaymentForm(false)}
+              />
+            </Elements>
+          </div>
+        )}
     </div>
   );
 };

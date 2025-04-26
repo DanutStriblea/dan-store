@@ -137,7 +137,7 @@ const OrderDetails = () => {
             Number(cardDetails.exp_year),
             Number(cardDetails.exp_month) - 1
           ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
-          computedPaymentSummary = `${cardDetails.card_brand} •••• ${cardDetails.last4} Expira in ${formattedExp}`;
+          computedPaymentSummary = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira in ${formattedExp}`;
         } else {
           computedPaymentSummary = "Card salvat";
         }

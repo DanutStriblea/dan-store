@@ -3,7 +3,7 @@ import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
 const PaymentMethod = ({ orderId }) => {
-  // Inițializăm state-urile cu valori implicite și încercăm să le citim din localStorage
+  // Inițializăm state-urile cu valori implicite și încercăm să le citim din localStorage.
   const [paymentMethod, setPaymentMethod] = useState(() => {
     const stored = localStorage.getItem("paymentMethod");
     return stored ? stored : "Card";
@@ -43,13 +43,19 @@ const PaymentMethod = ({ orderId }) => {
     fetchSavedCards();
   }, [orderId]);
 
-  // Persistăm valorile paymentMethod și selectedCard în localStorage ori de câte ori se schimbă
+  // Persistăm valorile paymentMethod și selectedCard în localStorage ori de câte ori se schimbă.
   useEffect(() => {
     localStorage.setItem("paymentMethod", paymentMethod);
     localStorage.setItem("selectedCard", selectedCard);
   }, [paymentMethod, selectedCard]);
 
-  // Efect pentru actualizarea order_details – actualizăm doar datele relevante
+  // Când se selectează un card salvat, salvăm și detaliile complete ale acestuia în localStorage.
+  const handleCardSelect = (card) => {
+    setSelectedCard(card.card_id);
+    localStorage.setItem("savedCardDetails", JSON.stringify(card));
+  };
+
+  // Efect pentru actualizarea order_details – actualizăm doar datele relevante.
   useEffect(() => {
     const updatePaymentData = async () => {
       console.log("Updating payment data:", {
@@ -111,7 +117,7 @@ const PaymentMethod = ({ orderId }) => {
                     name="selectedCard"
                     value={card.card_id}
                     checked={selectedCard === card.card_id}
-                    onChange={() => setSelectedCard(card.card_id)}
+                    onChange={() => handleCardSelect(card)}
                     className="mr-2"
                   />
                   <div>

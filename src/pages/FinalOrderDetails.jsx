@@ -23,16 +23,12 @@ const formatAddress = (addressObj) => {
 };
 
 const FinalOrderDetails = () => {
-  // Preluăm articolele din coș
   const { cartItems } = useContext(CartContext);
-
   const location = useLocation();
   const navigate = useNavigate();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
-  // Extragem datele din location.state.
-  // Se așteaptă ca acestea să fie transmise din pagina anterioară:
-  // orderId, orderData, paymentMethod, cardType și paymentSummary.
+  // Extragem datele din location.state
   const { orderId, orderData, paymentMethod, cardType, paymentSummary } =
     location.state || {};
 
@@ -55,15 +51,13 @@ const FinalOrderDetails = () => {
     );
   }
 
-  // Calculăm totalul produselor din coș (presupunem că prețurile sunt deja în RON)
   const totalProductCost = cartItems.reduce(
     (sum, item) => sum + item.product_price,
     0
   );
-  const deliveryCost = 25; // Costul livrării
-  const totalAmount = totalProductCost + deliveryCost; // suma totală în RON
+  const deliveryCost = 25;
+  const totalAmount = totalProductCost + deliveryCost;
 
-  // Funcția de navigare pentru butonul "Trimite Comandă"
   const handleSubmitOrder = async () => {
     console.log("Trimitem comanda pentru orderId:", orderId);
 
@@ -102,7 +96,6 @@ const FinalOrderDetails = () => {
     }
   };
 
-  // Funcția handleModifica: navighează la pagina de OrderDetails pentru a modifica selecția
   const handleModifica = (section) => {
     navigate("/order-details", { state: { section } });
   };
@@ -128,7 +121,6 @@ const FinalOrderDetails = () => {
             Modifică
           </button>
         </div>
-
         {/* Adresa facturare */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -144,7 +136,6 @@ const FinalOrderDetails = () => {
             Modifică
           </button>
         </div>
-
         {/* Metoda plată */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -182,7 +173,7 @@ const FinalOrderDetails = () => {
           className="w-60 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
           onClick={handleSubmitOrder}
         >
-          Trimite Comanda
+          Trimite Comandă
         </button>
       </div>
 

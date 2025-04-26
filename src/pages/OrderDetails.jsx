@@ -120,20 +120,27 @@ const OrderDetails = () => {
       return;
     }
 
-    // Pentru persistență, citim valorile din localStorage (dacă au fost salvate în PaymentMethod)
-    // Dacă nu sunt salvate, folosim valorile din state
+    // Citește din localStorage valorile persistente pentru metoda de plată
     const storedPaymentMethod =
       localStorage.getItem("paymentMethod") || paymentMethod;
     const storedCardType = localStorage.getItem("selectedCard") || cardType;
+    const savedCardDetailsString = localStorage.getItem("savedCardDetails");
 
-    // Construim un paymentSummary pe baza valorilor:
     let computedPaymentSummary = "";
     if (storedPaymentMethod === "Card") {
       if (storedCardType === "newCard") {
         computedPaymentSummary = "Plătește cu alt card";
       } else {
-        // Dacă este un card salvate, poți prelua și detaliile. Pentru simplitate, folosim un mesaj standard.
-        computedPaymentSummary = "Card salvat";
+        if (savedCardDetailsString) {
+          const cardDetails = JSON.parse(savedCardDetailsString);
+          const formattedExp = new Date(
+            Number(cardDetails.exp_year),
+            Number(cardDetails.exp_month) - 1
+          ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
+          computedPaymentSummary = `${cardDetails.card_brand} •••• ${cardDetails.last4} Expira in ${formattedExp}`;
+        } else {
+          computedPaymentSummary = "Card salvat";
+        }
       }
     } else if (storedPaymentMethod === "Ramburs") {
       computedPaymentSummary = "Ramburs la curier";
@@ -147,6 +154,10 @@ const OrderDetails = () => {
         orderData: {
           deliveryAddress: selectedAddress,
           billingAddress: billingAddress,
+          // Dacă dorești, poți transmite și detaliile cardului selectat:
+          selectedCardDetails: savedCardDetailsString
+            ? JSON.parse(savedCardDetailsString)
+            : null,
         },
         paymentMethod: storedPaymentMethod,
         cardType: storedCardType,

@@ -7,15 +7,15 @@ const PaymentMethod = ({ orderId }) => {
   const [selectedCard, setSelectedCard] = useState("savedCard");
   const [cardDetails, setCardDetails] = useState(null);
 
-  // Folosim useEffect pentru a prelua detaliile cardului din tabela order_details
+  // Folosim useEffect pentru a prelua detaliile cardului din order_details
   useEffect(() => {
     const fetchCardDetails = async () => {
       if (!orderId) {
         console.warn("orderId nu este definit!");
         return;
       }
-      // Presupunem că în order_details, coloana card_encrypted_data conține un obiect JSON
-      // cu detalii precum: { brand: "VISA", last4: "9664", exp_month: 11, exp_year: 2026 }
+      // Se presupune că în order_details, coloana card_encrypted_data conține un obiect JSON
+      // de forma: { brand: "Visa", last4: "4242", exp_month: 12, exp_year: 2025 }
       const { data, error } = await supabase
         .from("order_details")
         .select("card_encrypted_data")
@@ -32,7 +32,7 @@ const PaymentMethod = ({ orderId }) => {
     fetchCardDetails();
   }, [orderId]);
 
-  // Aici rămâne useEffect-ul care actualizează order_details în baza de date
+  // Efect pentru actualizarea order_details – nu actualizăm card_encrypted_data când se alege "savedCard"
   useEffect(() => {
     const updatePaymentData = async () => {
       console.log("Updating payment data:", {
@@ -44,12 +44,16 @@ const PaymentMethod = ({ orderId }) => {
         console.warn("orderId nu este definit!");
         return;
       }
+
+      const payload = { payment_method: paymentMethod };
+      // Actualizează card_encrypted_data doar dacă se folosește un "newCard"
+      if (paymentMethod === "Card" && selectedCard === "newCard") {
+        payload.card_encrypted_data = selectedCard;
+      }
+
       const { error } = await supabase
         .from("order_details")
-        .update({
-          payment_method: paymentMethod,
-          card_encrypted_data: paymentMethod === "Card" ? selectedCard : null,
-        })
+        .update(payload)
         .eq("id", orderId);
 
       if (error) {
@@ -99,8 +103,8 @@ const PaymentMethod = ({ orderId }) => {
                   <span className="ml-2">
                     Expira in{" "}
                     {new Date(
-                      cardDetails.exp_year,
-                      cardDetails.exp_month - 1
+                      Number(cardDetails.exp_year),
+                      Number(cardDetails.exp_month) - 1
                     ).toLocaleString("ro-RO", {
                       month: "long",
                       year: "numeric",

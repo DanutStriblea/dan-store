@@ -1,21 +1,21 @@
+// PaymentMethod.jsx
 import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
 const PaymentMethod = ({ orderId }) => {
   const [paymentMethod, setPaymentMethod] = useState("Card");
+  // “selectedCard” va fi "savedCard" dacă e cel salvat sau "newCard" pentru opțiunea de alt card
   const [selectedCard, setSelectedCard] = useState("savedCard");
   const [cardDetails, setCardDetails] = useState(null);
 
-  // Folosim useEffect pentru a prelua detaliile cardului din order_details
+  // Preluăm detaliile cardului din order_details
   useEffect(() => {
     const fetchCardDetails = async () => {
       if (!orderId) {
         console.warn("orderId nu este definit!");
         return;
       }
-      // Se presupune că în order_details, coloana card_encrypted_data conține un obiect JSON
-      // de forma: { brand: "Visa", last4: "4242", exp_month: 12, exp_year: 2025 }
       const { data, error } = await supabase
         .from("order_details")
         .select("card_encrypted_data")
@@ -32,7 +32,7 @@ const PaymentMethod = ({ orderId }) => {
     fetchCardDetails();
   }, [orderId]);
 
-  // Efect pentru actualizarea order_details – nu actualizăm card_encrypted_data când se alege "savedCard"
+  // Actualizează order_details (nu actualizăm detaliile cardului dacă avem opțiunea "savedCard")
   useEffect(() => {
     const updatePaymentData = async () => {
       console.log("Updating payment data:", {
@@ -44,11 +44,9 @@ const PaymentMethod = ({ orderId }) => {
         console.warn("orderId nu este definit!");
         return;
       }
-
       const payload = { payment_method: paymentMethod };
-      // Actualizează card_encrypted_data doar dacă se folosește un "newCard"
       if (paymentMethod === "Card" && selectedCard === "newCard") {
-        payload.card_encrypted_data = selectedCard;
+        payload.card_encrypted_data = selectedCard; // Aceasta este o actualizare specifică pentru alt card
       }
 
       const { error } = await supabase
@@ -70,7 +68,7 @@ const PaymentMethod = ({ orderId }) => {
     <div className="mb-6 border rounded-md p-4 bg-gray-50 shadow-md">
       <h2 className="text-xl font-semibold mb-4">3. Modalitate de plată</h2>
 
-      {/* Div pentru Card online */}
+      {/* Opțiunea: Card online */}
       <div className="mb-4">
         <label className="flex items-center">
           <input
@@ -130,7 +128,7 @@ const PaymentMethod = ({ orderId }) => {
         )}
       </div>
 
-      {/* Div pentru Ramburs la curier */}
+      {/* Opțiunea: Ramburs la curier */}
       <div>
         <label className="flex items-center">
           <input

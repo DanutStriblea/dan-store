@@ -25,6 +25,7 @@ import OrderDetails from "./pages/OrderDetails";
 import FinalOrderDetails from "./pages/FinalOrderDetails"; // Importă noua pagină
 import OrderConfirmation from "./pages/OrderConfirmation"; // Ruta pentru confirmare comandă
 import { AddressProvider } from "./context/AddressContext";
+import CartPopup from "./components/CartPopup"; // <-- Am adăugat această linie
 
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -93,10 +94,10 @@ function App() {
                         path="order-confirmation"
                         element={<OrderConfirmation />}
                       />
-
                       <Route path="*" element={<NotFound />} />
                     </Route>
                   </Routes>
+                  <CartPopup /> {/* Adaugă aici componenta de popup */}
                 </Router>
               </AddressProvider>
             </QuantityProvider>

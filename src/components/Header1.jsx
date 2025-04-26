@@ -8,6 +8,7 @@ import { AuthContext } from "../context/AuthContext";
 import Logout from "./Logout";
 import { useContext, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import CartPopup from "../components/CartPopup";
 
 const Header1 = ({ onSearch }) => {
   const { favoriteItems } = useContext(FavoriteContext);
@@ -15,6 +16,7 @@ const Header1 = ({ onSearch }) => {
   const { isAuthenticated, showLogoutMessage } = useContext(AuthContext);
 
   const [firstName, setFirstName] = useState("");
+  const [isCartHovered, setIsCartHovered] = useState(false);
 
   // Funcția reutilizabilă pentru preluarea datelor utilizatorului
   const fetchUserDetails = async () => {
@@ -109,7 +111,7 @@ const Header1 = ({ onSearch }) => {
           {/* Secțiunea de utilizator, salut și butoane */}
           <div className="flex items-center space-x-4 text-gray-600">
             {isAuthenticated && (
-              <div className={`hidden sm:inline text-sm text-green-500`}>
+              <div className="hidden sm:inline text-sm text-green-500">
                 Salut, {firstName || "!"}
               </div>
             )}
@@ -149,20 +151,32 @@ const Header1 = ({ onSearch }) => {
               </div>
               <span className="hidden lg:inline text-xs">Favorite</span>
             </NavLink>
-            <NavLink
-              to="/cart"
-              className="relative flex items-center space-x-1 hover:text-gray-800 text-sm"
+
+            {/* Modificarea la elementul coș:
+                Acum înfășurăm elementul de coș existent (care conține iconița, textul "Coș" și badge-ul)
+                într-un container 'relative inline-block' cu evenimente de hover.
+                Popup-ul va fi afișat sub acest container, fără a crea dubluri */}
+            <div
+              className="relative inline-block"
+              onMouseEnter={() => setIsCartHovered(true)}
+              onMouseLeave={() => setIsCartHovered(false)}
             >
-              <div className="relative">
-                <FaShoppingCart className="w-4 h-4" />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full">
-                    {cartItems.length}
-                  </span>
-                )}
-              </div>
-              <span className="hidden lg:inline text-xs">Coș</span>
-            </NavLink>
+              <NavLink
+                to="/cart"
+                className="relative flex items-center space-x-1 hover:text-gray-800 text-sm"
+              >
+                <div className="relative">
+                  <FaShoppingCart className="w-4 h-4" />
+                  {cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full">
+                      {cartItems.length}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden lg:inline text-xs">Coș</span>
+              </NavLink>
+              <CartPopup forceVisible={isCartHovered} />
+            </div>
           </div>
         </div>
 
@@ -175,7 +189,6 @@ const Header1 = ({ onSearch }) => {
       {showLogoutMessage && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
           <div className="relative bg-gray-200 p-6 rounded shadow-md w-96 text-center max-w-sm mx-auto">
-            {/* Dimensiunea textului ajustată pentru un impact vizual mai mare */}
             <h2 className="text-4xl font-bold mb-4 text-green-500">
               Hai sic... Pa!
             </h2>

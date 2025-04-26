@@ -3,21 +3,24 @@ import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
 const PaymentMethod = ({ orderId }) => {
-  const [paymentMethod, setPaymentMethod] = useState("Card");
-  // savedCards va conține lista de carduri din tabela "saved_cards"
+  // Inițializăm state-urile cu valori implicite și încercăm să le citim din localStorage
+  const [paymentMethod, setPaymentMethod] = useState(() => {
+    const stored = localStorage.getItem("paymentMethod");
+    return stored ? stored : "Card";
+  });
   const [savedCards, setSavedCards] = useState([]);
-  // selectedCard: dacă se selectează un card existent, va fi id-ul acelui card;
-  // dacă se selectează opțiunea "newCard", va fi "newCard".
-  const [selectedCard, setSelectedCard] = useState("savedCard");
+  const [selectedCard, setSelectedCard] = useState(() => {
+    const stored = localStorage.getItem("selectedCard");
+    return stored ? stored : "savedCard";
+  });
 
-  // Folosim useEffect pentru a prelua cardurile salvate din tabela "saved_cards"
+  // La montare, preluăm lista de carduri salvate din tabelul "saved_cards"
   useEffect(() => {
     const fetchSavedCards = async () => {
       if (!orderId) {
         console.warn("orderId nu este definit!");
         return;
       }
-      // Interogăm tabelul "saved_cards". Poți filtra după utilizator dacă este necesar.
       const { data, error } = await supabase
         .from("saved_cards")
         .select("*")
@@ -27,14 +30,24 @@ const PaymentMethod = ({ orderId }) => {
       } else {
         setSavedCards(data);
         if (data.length > 0) {
-          // Implicit, dacă există carduri salvate, setăm primul card ca selectat
-          setSelectedCard(data[0].card_id);
+          // Folosim updater-ul funcțional pentru selectedCard
+          setSelectedCard((prevSelectedCard) =>
+            prevSelectedCard === "savedCard"
+              ? data[0].card_id
+              : prevSelectedCard
+          );
         }
       }
     };
 
     fetchSavedCards();
   }, [orderId]);
+
+  // Persistăm valorile paymentMethod și selectedCard în localStorage ori de câte ori se schimbă
+  useEffect(() => {
+    localStorage.setItem("paymentMethod", paymentMethod);
+    localStorage.setItem("selectedCard", selectedCard);
+  }, [paymentMethod, selectedCard]);
 
   // Efect pentru actualizarea order_details – actualizăm doar datele relevante
   useEffect(() => {
@@ -50,10 +63,9 @@ const PaymentMethod = ({ orderId }) => {
       }
 
       const payload = { payment_method: paymentMethod };
-      // Dacă se folosește "newCard", actualizăm și card_encrypted_data;
-      // dacă se folosește un card salvat, nu actualizăm (se presupune că datele există deja)
+      // Actualizăm card_encrypted_data doar dacă se folosește "newCard"
       if (paymentMethod === "Card" && selectedCard === "newCard") {
-        payload.card_encrypted_data = selectedCard; // Acesta ar putea fi adaptat în funcție de logica ta.
+        payload.card_encrypted_data = selectedCard;
       }
 
       const { error } = await supabase

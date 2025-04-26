@@ -3,10 +3,36 @@ import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
 const PaymentMethod = ({ orderId }) => {
-  // Inițializare cu valoarea permisă din Supabase: "Card"
   const [paymentMethod, setPaymentMethod] = useState("Card");
-  const [selectedCard, setSelectedCard] = useState("savedCard"); // Rămâne neschimbat
+  const [selectedCard, setSelectedCard] = useState("savedCard");
+  const [cardDetails, setCardDetails] = useState(null);
 
+  // Folosim useEffect pentru a prelua detaliile cardului din tabela order_details
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!orderId) {
+        console.warn("orderId nu este definit!");
+        return;
+      }
+      // Presupunem că în order_details, coloana card_encrypted_data conține un obiect JSON
+      // cu detalii precum: { brand: "VISA", last4: "9664", exp_month: 11, exp_year: 2026 }
+      const { data, error } = await supabase
+        .from("order_details")
+        .select("card_encrypted_data")
+        .eq("id", orderId)
+        .single();
+
+      if (error) {
+        console.error("Eroare la preluarea detaliilor cardului:", error);
+      } else {
+        setCardDetails(data.card_encrypted_data);
+      }
+    };
+
+    fetchCardDetails();
+  }, [orderId]);
+
+  // Aici rămâne useEffect-ul care actualizează order_details în baza de date
   useEffect(() => {
     const updatePaymentData = async () => {
       console.log("Updating payment data:", {
@@ -46,7 +72,7 @@ const PaymentMethod = ({ orderId }) => {
           <input
             type="radio"
             name="paymentMethod"
-            value="Card" // Valoare corectă conform constrângerii
+            value="Card"
             checked={paymentMethod === "Card"}
             onChange={() => setPaymentMethod("Card")}
             className="mr-2"
@@ -65,7 +91,25 @@ const PaymentMethod = ({ orderId }) => {
                 onChange={() => setSelectedCard("savedCard")}
                 className="mr-2"
               />
-              Card salvat
+              {cardDetails ? (
+                <div>
+                  <span>
+                    {cardDetails.brand} •••• {cardDetails.last4}
+                  </span>
+                  <span className="ml-2">
+                    Expira in{" "}
+                    {new Date(
+                      cardDetails.exp_year,
+                      cardDetails.exp_month - 1
+                    ).toLocaleString("ro-RO", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              ) : (
+                "Card salvat"
+              )}
             </label>
             <label className="flex items-center">
               <input
@@ -88,7 +132,7 @@ const PaymentMethod = ({ orderId }) => {
           <input
             type="radio"
             name="paymentMethod"
-            value="Ramburs" // Valoare exactă conform constrângerii
+            value="Ramburs"
             checked={paymentMethod === "Ramburs"}
             onChange={() => setPaymentMethod("Ramburs")}
             className="mr-2"
@@ -104,6 +148,7 @@ const PaymentMethod = ({ orderId }) => {
     </div>
   );
 };
+
 PaymentMethod.propTypes = {
   orderId: PropTypes.string.isRequired,
 };

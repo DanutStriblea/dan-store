@@ -26,3 +26,4 @@ export default async function handler(req, res) {
   }
 }
 // This code defines an API endpoint that retrieves a payment method from Stripe using its ID.
+// actualizezi apoi functia const handleSubmit din FinalPaymentForm.jsx pentru a apela acest endpoint

@@ -7,8 +7,7 @@ import OrderSummary from "../components/OrderSummary";
 import { CartContext } from "../context/CartContext";
 
 /**
- * Funcție helper pentru formatarea adresei
- * Se presupune că obiectul de adresă conține: name, address, city și county.
+ * Helper pentru formatarea adresei
  */
 const formatAddress = (addressObj) => {
   if (!addressObj) return "N/A";
@@ -16,29 +15,6 @@ const formatAddress = (addressObj) => {
   return `${name ? name + " - " : ""}${address ? address : ""}${
     city ? ", " + city : ""
   }${county ? " (" + county + ")" : ""}`;
-};
-
-/**
- * Calculează textul de afișare în cardul "Metoda plată"
- * pe baza valorilor primite:
- * - Dacă paymentMethod e "Card" și cardType este "savedCard" și orderData include detaliile cardului,
- *   se afișează, de exemplu, "Visa •••• 1234".
- * - Dacă paymentMethod e "Card" și cardType este "newCard", se afișează "Plătește cu alt card".
- * - Dacă paymentMethod e "Ramburs", se afișează "Ramburs la curier".
- */
-const getPaymentSelectionText = (paymentMethod, cardType, orderData) => {
-  if (paymentMethod === "Card") {
-    if (cardType === "savedCard" && orderData.selectedCardDetails) {
-      const { card_brand, card_last4 } = orderData.selectedCardDetails;
-      return `${card_brand} •••• ${card_last4}`;
-    } else if (cardType === "newCard") {
-      return "Plătește cu alt card";
-    }
-    return "Card online";
-  } else if (paymentMethod === "Ramburs") {
-    return "Ramburs la curier";
-  }
-  return "";
 };
 
 const FinalOrderDetails = () => {
@@ -50,10 +26,9 @@ const FinalOrderDetails = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   // Extragem datele din location.state:
-  // Se așteaptă ca din pagina de selectare să fi fost transmise:
-  // orderId, orderData, paymentMethod și cardType.
-  // (orderData, pentru carduri salvate, poate include de exemplu `selectedCardDetails`)
-  const { orderId, orderData, paymentMethod, cardType } = location.state || {};
+  // se presupune că acestea includ: orderId, orderData, paymentMethod, cardType și selectedPaymentText
+  const { orderId, orderData, paymentMethod, cardType, selectedPaymentText } =
+    location.state || {};
 
   if (!orderId || !orderData || !paymentMethod || !cardType) {
     return (
@@ -81,9 +56,9 @@ const FinalOrderDetails = () => {
   const deliveryCost = 25;
   const totalAmount = totalProductCost + deliveryCost;
 
-  // Funcția de trimitere a comenzii
   const handleSubmitOrder = async () => {
     console.log("Trimitem comanda pentru orderId:", orderId);
+
     if (paymentMethod === "Card" && cardType === "newCard") {
       setShowPaymentForm(true);
     } else if (paymentMethod === "Card" && cardType === "savedCard") {
@@ -98,7 +73,7 @@ const FinalOrderDetails = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             amount: convertedAmount,
-            orderId: orderId,
+            orderId,
             paymentMethodId: selectedSavedCard,
           }),
         });
@@ -138,13 +113,12 @@ const FinalOrderDetails = () => {
             </p>
           </div>
           <button
-            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:bg-gray-100 transition duration-200 text-sm"
+            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 transition duration-200 text-sm"
             onClick={() => handleModifica("delivery")}
           >
             Modifică
           </button>
         </div>
-
         {/* Adresa facturare */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -154,23 +128,28 @@ const FinalOrderDetails = () => {
             </p>
           </div>
           <button
-            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:bg-gray-100 transition duration-200 text-sm"
+            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 transition duration-200 text-sm"
             onClick={() => handleModifica("billing")}
           >
             Modifică
           </button>
         </div>
-
         {/* Metoda plată */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
             <h2 className="text-base font-semibold mb-1">Metoda plată</h2>
             <p className="text-xs text-gray-500 mb-2">
-              {getPaymentSelectionText(paymentMethod, cardType, orderData)}
+              {selectedPaymentText && selectedPaymentText.trim() !== ""
+                ? selectedPaymentText
+                : paymentMethod === "Card"
+                ? `Card (${
+                    cardType === "newCard" ? "Plătește cu alt card" : "salvat"
+                  })`
+                : paymentMethod}
             </p>
           </div>
           <button
-            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:bg-gray-100 transition duration-200 text-sm"
+            className="mt-2 bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-full shadow hover:shadow-md hover:bg-gray-100 transition duration-200 text-sm"
             onClick={() => handleModifica("payment")}
           >
             Modifică

@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
-const PaymentMethod = ({ orderId, onSelectCard }) => {
+const PaymentMethod = ({ orderId }) => {
   const [paymentMethod, setPaymentMethod] = useState("Card");
-  const [savedCards, setSavedCards] = useState([]);
+  const [savedCards, setSavedCards] = useState([]); // Vom stoca cardurile salvate aici
   const [selectedCard, setSelectedCard] = useState(null);
 
   // Preluăm cardurile salvate din tabela "saved_cards"
   useEffect(() => {
     const fetchSavedCards = async () => {
+      // Poți filtra după utilizator dacă ai un câmp user_id asociat cardurilor,
+      // dar aici preluăm toate cardurile pentru simplitate.
       const { data, error } = await supabase
         .from("saved_cards")
         .select("*")
@@ -21,16 +23,16 @@ const PaymentMethod = ({ orderId, onSelectCard }) => {
         if (data.length > 0) {
           // Setăm implicit primul card salvat ca selectat
           setSelectedCard(data[0].card_id);
-          if (onSelectCard) onSelectCard(data[0].card_id);
         }
       }
     };
-    fetchSavedCards();
-  }, [orderId, onSelectCard]);
 
-  // Actualizează order_details și notifică părintelui cu selectedCard-ul curent
+    fetchSavedCards();
+  }, []);
+
+  // Actualizează order_details cu metoda de plată și cardul selectat
+  // Dacă se alege "Card" și se selectează un card existent, se trimite id-ul cardului.
   useEffect(() => {
-    if (onSelectCard) onSelectCard(selectedCard);
     const updatePaymentData = async () => {
       if (!orderId) {
         console.warn("orderId nu este definit!");
@@ -44,14 +46,16 @@ const PaymentMethod = ({ orderId, onSelectCard }) => {
             paymentMethod === "Card" && selectedCard ? selectedCard : null,
         })
         .eq("id", orderId);
+
       if (error) {
         console.error("Eroare la actualizarea metodei de plată:", error);
       } else {
         console.log("Update-ul a fost realizat cu succes!");
       }
     };
+
     updatePaymentData();
-  }, [paymentMethod, selectedCard, orderId, onSelectCard]);
+  }, [paymentMethod, selectedCard, orderId]);
 
   return (
     <div className="mb-6 border rounded-md p-4 bg-gray-50 shadow-md">
@@ -106,6 +110,7 @@ const PaymentMethod = ({ orderId, onSelectCard }) => {
                 Nu există carduri salvate.
               </p>
             )}
+
             <label className="flex items-center mt-2">
               <input
                 type="radio"
@@ -146,7 +151,6 @@ const PaymentMethod = ({ orderId, onSelectCard }) => {
 
 PaymentMethod.propTypes = {
   orderId: PropTypes.string.isRequired,
-  onSelectCard: PropTypes.func,
 };
 
 export default PaymentMethod;

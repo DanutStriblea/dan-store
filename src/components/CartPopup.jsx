@@ -1,3 +1,4 @@
+// CartPopup.jsx
 import { useState, useEffect, useContext } from "react";
 import PropTypes from "prop-types";
 import { CartContext } from "../context/CartContext";
@@ -10,35 +11,39 @@ const CartPopup = ({ forceVisible }) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    // Dacă suntem pe pagina de coș, ascundem popup-ul
     if (location.pathname === "/cart") {
       setVisible(false);
       return;
     }
 
-    if (forceVisible) {
-      setVisible(true);
-      return;
-    }
-
-    if (cartItems.length > 0) {
+    // Dacă primim forțarea vizibilității (de la hover), o folosim
+    if (typeof forceVisible !== "undefined") {
+      setVisible(forceVisible);
+    } else if (cartItems.length > 0) {
+      // Comportamentul normal: afișează popup-ul pentru 4 secunde
       setVisible(true);
       const timer = setTimeout(() => {
         setVisible(false);
       }, 4000);
       return () => clearTimeout(timer);
     }
-
-    setVisible(false);
   }, [cartItems, forceVisible, location.pathname]);
 
   if (!visible) return null;
 
   return (
     <div
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
+      // Adăugăm și evenimente pentru popup, astfel încât dacă cursorul intră în popup,
+      // acesta nu dispare (acestea sunt opționale, deoarece și containerul părinte din Header2 le gestionează)
+      onMouseEnter={() => {
+        if (typeof forceVisible !== "undefined") setVisible(true);
+      }}
+      onMouseLeave={() => {
+        if (typeof forceVisible !== "undefined") setVisible(false);
+      }}
       onClick={() => navigate("/cart")}
-      className="absolute top-full right-2 mt-2 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-50 min-w-[250px]"
+      className="fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-50 min-w-[250px]"
     >
       <h3 className="text-sm font-semibold mb-2 text-left">Produse în coș</h3>
       <ul className="space-y-2">
@@ -73,14 +78,13 @@ const CartPopup = ({ forceVisible }) => {
           e.stopPropagation();
           navigate("/cart");
         }}
-        className="bg-sky-900 text-white px-4 py-1.5 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-auto mx-auto block text-sm mt-4"
+        className="bg-sky-900 text-white px-4 py-1.5 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-auto mx-auto block text-m mt-4"
       >
         Mergi la cos
       </button>
     </div>
   );
 };
-
 CartPopup.propTypes = {
   forceVisible: PropTypes.bool,
 };

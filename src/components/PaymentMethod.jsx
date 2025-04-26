@@ -30,7 +30,7 @@ const PaymentMethod = ({ orderId }) => {
       } else {
         setSavedCards(data);
         if (data.length > 0) {
-          // Folosim updater-ul funcțional pentru selectedCard
+          // Folosim updater-ul funcțional pentru selectedCard:
           setSelectedCard((prevSelectedCard) =>
             prevSelectedCard === "savedCard"
               ? data[0].card_id
@@ -69,7 +69,7 @@ const PaymentMethod = ({ orderId }) => {
       }
 
       const payload = { payment_method: paymentMethod };
-      // Actualizăm card_encrypted_data doar dacă se folosește "newCard".
+      // Actualizăm card_encrypted_data doar dacă se folosește "newCard"
       if (paymentMethod === "Card" && selectedCard === "newCard") {
         payload.card_encrypted_data = selectedCard;
       }
@@ -111,20 +111,23 @@ const PaymentMethod = ({ orderId }) => {
           <div className="pl-6 flex flex-col space-y-2 mt-2">
             {savedCards.length > 0 ? (
               savedCards.map((card) => (
-                <label key={card.card_id} className="flex items-center">
+                <label
+                  key={card.card_id}
+                  className="flex items-center border border-gray-200 rounded-md p-2 bg-white shadow-sm w-full max-w-[600px] mr-6 mx-auto"
+                >
                   <input
                     type="radio"
                     name="selectedCard"
                     value={card.card_id}
                     checked={selectedCard === card.card_id}
                     onChange={() => handleCardSelect(card)}
-                    className="mr-2"
+                    className="mr-3 mt-1 ml-1"
                   />
                   <div>
-                    <span>
+                    <span className="block text-sm font-medium">
                       {card.card_brand} •••• {card.card_last4}
                     </span>
-                    <span className="ml-2">
+                    <span className="block text-xs text-gray-500">
                       Expira in{" "}
                       {new Date(
                         Number(card.exp_year),
@@ -150,9 +153,9 @@ const PaymentMethod = ({ orderId }) => {
                 value="newCard"
                 checked={selectedCard === "newCard"}
                 onChange={() => setSelectedCard("newCard")}
-                className="mr-2"
+                className=" mr-2 mt-1"
               />
-              Plătește cu alt card
+              <span className="text-l mt-1">Plătește cu alt card</span>
             </label>
           </div>
         )}

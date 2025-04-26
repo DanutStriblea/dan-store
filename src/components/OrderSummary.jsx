@@ -138,6 +138,7 @@ const OrderSummary = ({
       <h2 className={titleClass ? titleClass : "text-lg font-semibold mb-4"}>
         Sumar comanda
       </h2>
+
       <div className="space-y-2">
         {products.map((product, index) => (
           <div key={index} className="flex justify-between text-sm">
@@ -147,7 +148,8 @@ const OrderSummary = ({
             <span>{product.price.toFixed(2)} RON</span>
           </div>
         ))}
-        <div className="flex justify-between text-sm mt-4">
+
+        <div className="flex justify-between text-sm text-gray-600 mt-6">
           <span>Cost livrare:</span>
           <span>{deliveryCost.toFixed(2)} RON</span>
         </div>

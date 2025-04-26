@@ -2,16 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import PropTypes from "prop-types";
 
-const PaymentMethod = ({ orderId }) => {
+const PaymentMethod = ({ orderId, onPaymentSelected }) => {
   const [paymentMethod, setPaymentMethod] = useState("Card");
-  const [savedCards, setSavedCards] = useState([]); // Vom stoca cardurile salvate aici
+  const [savedCards, setSavedCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
 
   // Preluăm cardurile salvate din tabela "saved_cards"
   useEffect(() => {
     const fetchSavedCards = async () => {
-      // Poți filtra după utilizator dacă ai un câmp user_id asociat cardurilor,
-      // dar aici preluăm toate cardurile pentru simplitate.
       const { data, error } = await supabase
         .from("saved_cards")
         .select("*")
@@ -21,17 +19,15 @@ const PaymentMethod = ({ orderId }) => {
       } else {
         setSavedCards(data);
         if (data.length > 0) {
-          // Setăm implicit primul card salvat ca selectat
           setSelectedCard(data[0].card_id);
         }
       }
     };
 
     fetchSavedCards();
-  }, []);
+  }, [orderId]);
 
-  // Actualizează order_details cu metoda de plată și cardul selectat
-  // Dacă se alege "Card" și se selectează un card existent, se trimite id-ul cardului.
+  // Actualizează order_details și notifică componenta părinte cu sumarul metodei de plată selectate
   useEffect(() => {
     const updatePaymentData = async () => {
       if (!orderId) {
@@ -50,12 +46,23 @@ const PaymentMethod = ({ orderId }) => {
       if (error) {
         console.error("Eroare la actualizarea metodei de plată:", error);
       } else {
-        console.log("Update-ul a fost realizat cu succes!");
+        console.log("Update-ul metodei de plată a fost realizat cu succes!");
       }
     };
 
     updatePaymentData();
-  }, [paymentMethod, selectedCard, orderId]);
+
+    if (onPaymentSelected) {
+      let summaryText = "";
+      if (paymentMethod === "Card") {
+        summaryText =
+          selectedCard === "newCard" ? "Card (nou)" : "Card (salvat)";
+      } else if (paymentMethod === "Ramburs") {
+        summaryText = "Ramburs la curier";
+      }
+      onPaymentSelected(summaryText);
+    }
+  }, [paymentMethod, selectedCard, orderId, onPaymentSelected]);
 
   return (
     <div className="mb-6 border rounded-md p-4 bg-gray-50 shadow-md">
@@ -74,7 +81,6 @@ const PaymentMethod = ({ orderId }) => {
           />
           Card online
         </label>
-
         {paymentMethod === "Card" && (
           <div className="pl-6 flex flex-col space-y-2 mt-2">
             {savedCards.length > 0 ? (
@@ -110,7 +116,6 @@ const PaymentMethod = ({ orderId }) => {
                 Nu există carduri salvate.
               </p>
             )}
-
             <label className="flex items-center mt-2">
               <input
                 type="radio"
@@ -151,6 +156,7 @@ const PaymentMethod = ({ orderId }) => {
 
 PaymentMethod.propTypes = {
   orderId: PropTypes.string.isRequired,
+  onPaymentSelected: PropTypes.func,
 };
 
 export default PaymentMethod;

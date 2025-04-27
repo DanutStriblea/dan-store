@@ -56,6 +56,7 @@ const PaymentMethod = ({ orderId }) => {
   };
 
   // Efect pentru actualizarea order_details – actualizăm doar datele relevante.
+  // Efect pentru actualizarea order_details – actualizăm doar datele relevante.
   useEffect(() => {
     const updatePaymentData = async () => {
       console.log("Updating payment data:", {
@@ -67,25 +68,20 @@ const PaymentMethod = ({ orderId }) => {
         console.warn("orderId nu este definit!");
         return;
       }
-
       const payload = { payment_method: paymentMethod };
-      // Actualizăm card_encrypted_data doar dacă se folosește "newCard"
-      if (paymentMethod === "Card" && selectedCard === "newCard") {
+      if (paymentMethod === "Card") {
         payload.card_encrypted_data = selectedCard;
       }
-
       const { error } = await supabase
         .from("order_details")
         .update(payload)
         .eq("id", orderId);
-
       if (error) {
         console.error("Eroare la actualizarea metodei de plată:", error);
       } else {
         console.log("Update-ul a fost realizat cu succes!");
       }
     };
-
     updatePaymentData();
   }, [paymentMethod, selectedCard, orderId]);
 

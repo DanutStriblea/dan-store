@@ -11,22 +11,23 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { amount, orderId, paymentMethodId } = req.body;
-  if (!amount || !orderId || !paymentMethodId) {
-    return res
-      .status(400)
-      .json({ error: "Missing amount, orderId, or paymentMethodId" });
+  const { amount, orderId, paymentMethodId, customerId } = req.body;
+  if (!amount || !orderId || !paymentMethodId || !customerId) {
+    return res.status(400).json({
+      error: "Missing amount, orderId, paymentMethodId, or customerId",
+    });
   }
 
   try {
     // Creăm PaymentIntent folosind cardul salvat.
     // Este necesar ca PaymentMethod-ul să fie deja asociat unui customer în Stripe.
     const paymentIntent = await stripe.paymentIntents.create({
-      amount, // suma în subunităţi (ex. centime)
-      currency: "ron", // presupunând RON; ajustează după nevoie
+      amount, // suma în subunități (centime)
+      currency: "ron", // moneda folosită
       payment_method: paymentMethodId,
+      customer: customerId, // folosește customerId din corpul cererii
       confirm: true,
-      off_session: true, // confirmare off-session
+      off_session: true,
     });
 
     return res.status(200).json({ paymentIntent });

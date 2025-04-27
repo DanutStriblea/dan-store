@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CardNumberElement,
@@ -9,11 +9,16 @@ import {
 } from "@stripe/react-stripe-js";
 import PropTypes from "prop-types";
 import { supabase } from "../supabaseClient";
+import { AuthContext } from "../context/AuthContext";
+
+// Folosim import.meta.env pentru variabilele de mediu în Vite
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 const FinalPaymentForm = ({ orderId, amount, onClose }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -21,21 +26,16 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
 
-  // Funcție pentru salvarea cardului în Supabase
   const saveCardInDatabase = async (paymentMethod) => {
     console.log("PaymentMethod primit:", paymentMethod);
-
-    // Dacă nu avem niciun obiect, aruncăm eroare
     if (!paymentMethod) {
       throw new Error("PaymentMethod invalid primit pentru salvare.");
     }
-
-    // Dacă paymentMethod este un string (ID-ul PaymentMethod), nu avem detaliile cardului
     if (typeof paymentMethod === "string") {
       const id = paymentMethod;
       const { error } = await supabase.from("saved_cards").insert([
         {
-          card_id: id, // modificare: folosește "card_id" în loc de "payment_method_id"
+          card_id: id,
           card_brand: null,
           card_last4: null,
           exp_month: null,
@@ -49,15 +49,13 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
       }
       return;
     }
-
-    // Dacă paymentMethod este un obiect dar fără proprietatea "card"
     if (!paymentMethod.card) {
       throw new Error("PaymentMethod invalid primit pentru salvare.");
     }
     const { id, card } = paymentMethod;
     const { error } = await supabase.from("saved_cards").insert([
       {
-        card_id: id, // modificare: folosește "card_id" în loc de "payment_method_id"
+        card_id: id,
         card_brand: card.brand,
         card_last4: card.last4,
         exp_month: card.exp_month,
@@ -73,33 +71,29 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (!acceptedTerms) {
       setErrorMessage("Vă rugăm să acceptați termenii și condițiile.");
       return;
     }
-
     setIsProcessing(true);
     setErrorMessage(null);
-
     const cardNumberElement = elements.getElement(CardNumberElement);
-
     try {
       if (saveCard) {
-        // Apelăm endpoint-ul pentru SetupIntent
-        const setupResponse = await fetch("/api/create-setup-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
+        const setupResponse = await fetch(
+          `${API_URL}/api/create-setup-intent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: user ? user.email : "" }),
+          }
+        );
         const setupData = await setupResponse.json();
         if (!setupResponse.ok || !setupData.clientSecret) {
           throw new Error(setupData.error || "Eroare la crearea SetupIntent.");
         }
         const setupClientSecret = setupData.clientSecret;
         console.log("SetupIntent Client Secret:", setupClientSecret);
-
-        // Confirmăm SetupIntent pentru a salva cardul
         const { error: confirmError, setupIntent } =
           await stripe.confirmCardSetup(setupClientSecret, {
             payment_method: {
@@ -111,7 +105,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
           throw new Error(confirmError.message);
         }
         console.log("SetupIntent primit:", setupIntent);
-
         if (!setupIntent || !setupIntent.payment_method) {
           throw new Error("SetupIntent nu a returnat un PaymentMethod valid.");
         }
@@ -119,15 +112,16 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
           "PaymentMethod extras din SetupIntent:",
           setupIntent.payment_method
         );
-
-        // Preluăm detaliile complete ale PaymentMethod-ului, dacă este necesar:
         let fullPaymentMethod = setupIntent.payment_method;
         if (typeof fullPaymentMethod === "string" || !fullPaymentMethod.card) {
-          const retrieveResponse = await fetch("/api/retrieve-payment-method", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ paymentMethodId: fullPaymentMethod }),
-          });
+          const retrieveResponse = await fetch(
+            `${API_URL}/api/retrieve-payment-method`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentMethodId: fullPaymentMethod }),
+            }
+          );
           const retrievedData = await retrieveResponse.json();
           if (!retrieveResponse.ok || !retrievedData.card) {
             throw new Error(
@@ -137,17 +131,18 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
           fullPaymentMethod = retrievedData;
         }
         console.log("Full PaymentMethod details:", fullPaymentMethod);
-
         await saveCardInDatabase(fullPaymentMethod);
       } else {
-        // Fluxul standard pentru procesarea plății cu PaymentIntent
         const convertedAmount = Math.round(amount * 100);
         console.log("Amount convertit (în subunități):", convertedAmount);
-        const paymentResponse = await fetch("/api/create-payment-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: convertedAmount, orderId }),
-        });
+        const paymentResponse = await fetch(
+          `${API_URL}/api/create-payment-intent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ amount: convertedAmount, orderId }),
+          }
+        );
         const paymentData = await paymentResponse.json();
         if (!paymentResponse.ok || !paymentData.clientSecret) {
           throw new Error(
@@ -156,7 +151,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         }
         const paymentClientSecret = paymentData.clientSecret;
         console.log("PaymentIntent Client Secret:", paymentClientSecret);
-
         const { error: confirmError, paymentIntent } =
           await stripe.confirmCardPayment(paymentClientSecret, {
             payment_method: {
@@ -169,7 +163,6 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         }
         console.log("Plată confirmată:", paymentIntent);
       }
-
       navigate(
         `/order-confirmation?orderId=${orderId}&email=${encodeURIComponent(
           cardholderName

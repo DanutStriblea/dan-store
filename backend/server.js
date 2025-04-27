@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 4242;
 app.use(express.json());
 app.use(cors());
 
+// Endpoint pentru crearea PaymentIntent (pentru plățile imediate)
 app.post("/api/create-payment-intent", async (req, res) => {
   try {
     const { amount, orderId } = req.body;
@@ -29,6 +30,46 @@ app.post("/api/create-payment-intent", async (req, res) => {
   } catch (err) {
     console.error("Eroare la crearea PaymentIntent:", err);
     res.status(500).json({ error: "Eroare la crearea PaymentIntent." });
+  }
+});
+
+// Endpoint pentru crearea SetupIntent (pentru salvarea cardurilor noi)
+app.post("/api/create-setup-intent", async (req, res) => {
+  try {
+    // Extragem date din body; pentru exemplu, emailul este opțional
+    const { email } = req.body;
+
+    // Dacă dorești, poți crea sau atașa un customer în Stripe folosind emailul.
+    // Dacă nu ai un customer deja, poți crea unul:
+    // const customer = await stripe.customers.create({ email });
+    // apoi, poți folosi customer.id în setupIntent
+
+    // Pentru un caz de bază, vom crea SetupIntent-ul fără a specifica customer:
+    const setupIntent = await stripe.setupIntents.create({
+      usage: "off_session",
+      // Dacă ai un customer:
+      // customer: customer.id,
+    });
+
+    res.status(200).json({ clientSecret: setupIntent.client_secret });
+  } catch (err) {
+    console.error("Eroare la crearea SetupIntent:", err);
+    res.status(500).json({ error: "Eroare la crearea SetupIntent." });
+  }
+});
+
+// Endpoint pentru recuperarea PaymentMethod
+app.post("/api/retrieve-payment-method", async (req, res) => {
+  try {
+    const { paymentMethodId } = req.body;
+    if (!paymentMethodId) {
+      return res.status(400).json({ error: "Missing paymentMethodId" });
+    }
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+    res.status(200).json(paymentMethod);
+  } catch (err) {
+    console.error("Error retrieving PaymentMethod:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 

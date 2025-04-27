@@ -1,3 +1,4 @@
+/* global process */
 import { useState, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Elements } from "@stripe/react-stripe-js";
@@ -5,15 +6,12 @@ import stripePromise from "../stripeConfig";
 import FinalPaymentForm from "../components/FinalPaymentForm";
 import OrderSummary from "../components/OrderSummary";
 import { CartContext } from "../context/CartContext";
+import { AuthContext } from "../context/AuthContext";
 
-/**
- * Helper care formatează un obiect de adresă într-un șir.
- * Se presupune că obiectul de adresă conține proprietățile:
- * - name
- * - address (strada)
- * - city
- * - county
- */
+// Configurare URL API – dacă process nu este definit, se folosește șir gol (apeluri relative)
+const API_URL =
+  (typeof process !== "undefined" && process.env.REACT_APP_API_URL) || "";
+
 const formatAddress = (addressObj) => {
   if (!addressObj) return "N/A";
   const { name, address, city, county } = addressObj;
@@ -24,6 +22,7 @@ const formatAddress = (addressObj) => {
 
 const FinalOrderDetails = () => {
   const { cartItems } = useContext(CartContext);
+  const { user } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -70,15 +69,22 @@ const FinalOrderDetails = () => {
           throw new Error("Nu a fost selectat niciun card salvat.");
         }
         const convertedAmount = Math.round(totalAmount * 100);
-        const response = await fetch("/api/create-payment-intent-saved", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: convertedAmount,
-            orderId,
-            paymentMethodId: selectedSavedCard,
-          }),
-        });
+        // Extragem customerId din AuthContext; trebuie să fie salvat pentru utilizatorul autentic.
+        const customerId =
+          user && user.stripeCustomerId ? user.stripeCustomerId : "cus_test123";
+        const response = await fetch(
+          `${API_URL}/api/create-payment-intent-saved`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              amount: convertedAmount,
+              orderId,
+              paymentMethodId: selectedSavedCard,
+              customerId, // ID-ul clientului din Stripe
+            }),
+          }
+        );
         const data = await response.json();
         if (!response.ok) {
           throw new Error(
@@ -121,6 +127,7 @@ const FinalOrderDetails = () => {
             Modifică
           </button>
         </div>
+
         {/* Adresa facturare */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -136,6 +143,7 @@ const FinalOrderDetails = () => {
             Modifică
           </button>
         </div>
+
         {/* Metoda plată */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -177,7 +185,7 @@ const FinalOrderDetails = () => {
         </button>
       </div>
 
-      {/* Formularul Stripe pentru carduri noi (afișat doar pentru carduri noi) */}
+      {/* Formularul Stripe pentru carduri noi (afișat doar dacă s-a ales "newCard") */}
       {showPaymentForm &&
         paymentMethod === "Card" &&
         cardType === "newCard" && (

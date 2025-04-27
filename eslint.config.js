@@ -40,6 +40,7 @@ export default [
     files: ["backend/**/*.{js,jsx}", "server.js"],
     env: {
       node: true, // specifică mediul Node.js
+      browser: true,
     },
     languageOptions: {
       // Folosește variabilele globale pentru Node

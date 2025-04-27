@@ -6,7 +6,7 @@ import { FavoriteContext } from "../context/FavoriteContext";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import Logout from "./Logout";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import CartPopup from "../components/CartPopup";
 
@@ -17,8 +17,10 @@ const Header1 = ({ onSearch }) => {
 
   const [firstName, setFirstName] = useState("");
   const [isCartHovered, setIsCartHovered] = useState(false);
+  // Ref pentru a gestiona timerul de delay la ieșirea cursorului din zona coșului
+  const cartHoverTimerRef = useRef(null);
 
-  // Funcția reutilizabilă pentru preluarea datelor utilizatorului
+  // Funcția pentru a prelua datele utilizatorului
   const fetchUserDetails = async () => {
     const {
       data: { user },
@@ -49,11 +51,11 @@ const Header1 = ({ onSearch }) => {
   // Fetch inițial după logare
   useEffect(() => {
     if (isAuthenticated) {
-      fetchUserDetails(); // Apelăm imediat după autentificare
+      fetchUserDetails();
     }
   }, [isAuthenticated]);
 
-  // Ascultător real-time pentru actualizări în tabelul user_details
+  // Ascultător real-time pentru actualizări în datele utilizatorului
   useEffect(() => {
     console.log("Header URL la încărcare:", window.location.href);
     if (!isAuthenticated) return;
@@ -65,7 +67,7 @@ const Header1 = ({ onSearch }) => {
         { event: "UPDATE", schema: "public", table: "user_details" },
         (payload) => {
           if (payload.new.user_id) {
-            fetchUserDetails(); // Actualizăm prenumele prin fetch manual
+            fetchUserDetails();
           }
         }
       )
@@ -152,14 +154,24 @@ const Header1 = ({ onSearch }) => {
               <span className="hidden lg:inline text-xs">Favorite</span>
             </NavLink>
 
-            {/* Modificarea la elementul coș:
-                Acum înfășurăm elementul de coș existent (care conține iconița, textul "Coș" și badge-ul)
-                într-un container 'relative inline-block' cu evenimente de hover.
-                Popup-ul va fi afișat sub acest container, fără a crea dubluri */}
+            {/* Containerul pentru elementul coș */}
             <div
               className="relative inline-block"
-              onMouseEnter={() => setIsCartHovered(true)}
-              onMouseLeave={() => setIsCartHovered(false)}
+              onMouseEnter={() => {
+                // Dacă există un timer, îl anulăm și setăm starea de hover la true imediat.
+                if (cartHoverTimerRef.current) {
+                  clearTimeout(cartHoverTimerRef.current);
+                  cartHoverTimerRef.current = null;
+                }
+                setIsCartHovered(true);
+              }}
+              onMouseLeave={() => {
+                // La ieșirea cursorului, așteptăm 1 secundă înainte de a seta starea de hover la false.
+                cartHoverTimerRef.current = setTimeout(() => {
+                  setIsCartHovered(false);
+                  cartHoverTimerRef.current = null;
+                }, 500); // 1000ms = 1 secundă delay
+              }}
             >
               <NavLink
                 to="/cart"

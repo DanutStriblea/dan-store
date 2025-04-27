@@ -1,5 +1,4 @@
-// CartPopup.jsx
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import PropTypes from "prop-types";
 import { CartContext } from "../context/CartContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -9,38 +8,69 @@ const CartPopup = ({ forceVisible }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [visible, setVisible] = useState(false);
+  const timerRef = useRef(null);
+  const prevCartCountRef = useRef(cartItems.length);
 
+  // Effect care gestionează comportamentul la modificarea coșului (auto-popup)
   useEffect(() => {
-    // Dacă suntem pe pagina de coș, ascundem popup-ul
+    // Nu afișăm popup-ul dacă suntem pe pagina de coș.
     if (location.pathname === "/cart") {
       setVisible(false);
       return;
     }
-
-    // Dacă primim forțarea vizibilității (de la hover), o folosim
-    if (typeof forceVisible !== "undefined") {
-      setVisible(forceVisible);
-    } else if (cartItems.length > 0) {
-      // Comportamentul normal: afișează popup-ul pentru 4 secunde
-      setVisible(true);
-      const timer = setTimeout(() => {
-        setVisible(false);
-      }, 4000);
-      return () => clearTimeout(timer);
+    // Dacă nu suntem în modul hover (forceVisible nu este true),
+    // detectăm schimbarea numărului de produse din coș.
+    if (!forceVisible) {
+      if (cartItems.length !== prevCartCountRef.current) {
+        // Coșul s-a modificat: afișăm popup-ul pentru 3 secunde.
+        setVisible(true);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          setVisible(false);
+          timerRef.current = null;
+        }, 3000);
+      }
+      prevCartCountRef.current = cartItems.length;
     }
-  }, [cartItems, forceVisible, location.pathname]);
+  }, [cartItems, location.pathname, forceVisible]);
+
+  // Effect pentru controlul prin hover (forceVisible)
+  useEffect(() => {
+    if (forceVisible === true) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      setVisible(true);
+      return;
+    }
+    if (forceVisible === false) {
+      setVisible(false);
+    }
+  }, [forceVisible]);
 
   if (!visible) return null;
 
   return (
     <div
-      // Adăugăm și evenimente pentru popup, astfel încât dacă cursorul intră în popup,
-      // acesta nu dispare (acestea sunt opționale, deoarece și containerul părinte din Header2 le gestionează)
       onMouseEnter={() => {
-        if (typeof forceVisible !== "undefined") setVisible(true);
+        // La intrarea mouse-ului, anulăm orice timer și forțăm afișarea.
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        setVisible(true);
       }}
       onMouseLeave={() => {
-        if (typeof forceVisible !== "undefined") setVisible(false);
+        // La plecarea mouse-ului, așteptăm 1 secundă înainte de a ascunde popup-ul.
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        timerRef.current = setTimeout(() => {
+          setVisible(false);
+          timerRef.current = null;
+        }, 300);
       }}
       onClick={() => navigate("/cart")}
       className="fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-50 min-w-[250px]"
@@ -78,13 +108,14 @@ const CartPopup = ({ forceVisible }) => {
           e.stopPropagation();
           navigate("/cart");
         }}
-        className="bg-sky-900 text-white px-4 py-1.5 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-auto mx-auto block text-m mt-4"
+        className="bg-sky-900 text-white px-4 py-1.5 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-auto mx-auto block text-sm mt-4"
       >
         Mergi la cos
       </button>
     </div>
   );
 };
+
 CartPopup.propTypes = {
   forceVisible: PropTypes.bool,
 };

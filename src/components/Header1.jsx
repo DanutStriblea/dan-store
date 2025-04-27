@@ -17,8 +17,11 @@ const Header1 = ({ onSearch }) => {
 
   const [firstName, setFirstName] = useState("");
   const [isCartHovered, setIsCartHovered] = useState(false);
-  // Ref pentru a gestiona timerul de delay la ieșirea cursorului din zona coșului
+  // Ref pentru a gestiona timerul la ieșirea din zona de hover a coșului
   const cartHoverTimerRef = useRef(null);
+
+  // Helper: verifică dacă afișarea se face pe desktop
+  const isDesktop = () => window.innerWidth >= 1024;
 
   // Funcția pentru a prelua datele utilizatorului
   const fetchUserDetails = async () => {
@@ -55,7 +58,7 @@ const Header1 = ({ onSearch }) => {
     }
   }, [isAuthenticated]);
 
-  // Ascultător real-time pentru actualizări în datele utilizatorului
+  // Ascultător real-time pentru actualizări în detaliile utilizatorului
   useEffect(() => {
     console.log("Header URL la încărcare:", window.location.href);
     if (!isAuthenticated) return;
@@ -158,19 +161,21 @@ const Header1 = ({ onSearch }) => {
             <div
               className="relative inline-block"
               onMouseEnter={() => {
-                // Dacă există un timer, îl anulăm și setăm starea de hover la true imediat.
-                if (cartHoverTimerRef.current) {
-                  clearTimeout(cartHoverTimerRef.current);
-                  cartHoverTimerRef.current = null;
+                if (isDesktop()) {
+                  if (cartHoverTimerRef.current) {
+                    clearTimeout(cartHoverTimerRef.current);
+                    cartHoverTimerRef.current = null;
+                  }
+                  setIsCartHovered(true);
                 }
-                setIsCartHovered(true);
               }}
               onMouseLeave={() => {
-                // La ieșirea cursorului, așteptăm 1 secundă înainte de a seta starea de hover la false.
-                cartHoverTimerRef.current = setTimeout(() => {
-                  setIsCartHovered(false);
-                  cartHoverTimerRef.current = null;
-                }, 500); // 1000ms = 1 secundă delay
+                if (isDesktop()) {
+                  cartHoverTimerRef.current = setTimeout(() => {
+                    setIsCartHovered(false);
+                    cartHoverTimerRef.current = null;
+                  }, 1000); // delay de 1 secundă pentru a putea ajunge pe popup
+                }
               }}
             >
               <NavLink

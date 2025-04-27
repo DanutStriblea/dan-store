@@ -7,22 +7,22 @@ const CartPopup = ({ forceVisible }) => {
   const { cartItems } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // visible controlează dacă popup-ul este activ (pentru opacitate)
   const [visible, setVisible] = useState(false);
+  // shouldRender controlează dacă elementul trebuie montat în DOM
+  const [shouldRender, setShouldRender] = useState(false);
   const timerRef = useRef(null);
   const prevCartCountRef = useRef(cartItems.length);
 
-  // Effect care gestionează comportamentul la modificarea coșului (auto-popup)
+  // Effect pentru auto-popup declanșat de modificarea coșului (atunci când nu avem hover)
   useEffect(() => {
-    // Nu afișăm popup-ul dacă suntem pe pagina de coș.
     if (location.pathname === "/cart") {
       setVisible(false);
       return;
     }
-    // Dacă nu suntem în modul hover (forceVisible nu este true),
-    // detectăm schimbarea numărului de produse din coș.
     if (!forceVisible) {
       if (cartItems.length !== prevCartCountRef.current) {
-        // Coșul s-a modificat: afișăm popup-ul pentru 3 secunde.
         setVisible(true);
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
@@ -34,7 +34,7 @@ const CartPopup = ({ forceVisible }) => {
     }
   }, [cartItems, location.pathname, forceVisible]);
 
-  // Effect pentru controlul prin hover (forceVisible)
+  // Effect pentru a gestiona controlul prin hover
   useEffect(() => {
     if (forceVisible === true) {
       if (timerRef.current) {
@@ -49,12 +49,24 @@ const CartPopup = ({ forceVisible }) => {
     }
   }, [forceVisible]);
 
-  if (!visible) return null;
+  // Effect pentru a menține elementul montat în DOM în timpul tranziției
+  useEffect(() => {
+    if (visible) {
+      setShouldRender(true);
+    } else {
+      const timeout = setTimeout(() => {
+        setShouldRender(false);
+      }, 300); // Durata tranziției CSS (300ms)
+      return () => clearTimeout(timeout);
+    }
+  }, [visible]);
+
+  if (!shouldRender) return null;
 
   return (
     <div
       onMouseEnter={() => {
-        // La intrarea mouse-ului, anulăm orice timer și forțăm afișarea.
+        // La intrarea mouse-ului, se anulează orice timer și se setează visible
         if (timerRef.current) {
           clearTimeout(timerRef.current);
           timerRef.current = null;
@@ -62,7 +74,7 @@ const CartPopup = ({ forceVisible }) => {
         setVisible(true);
       }}
       onMouseLeave={() => {
-        // La plecarea mouse-ului, așteptăm 1 secundă înainte de a ascunde popup-ul.
+        // La ieșirea mouse-ului, se aplică un delay de 1 secundă înainte de a seta visible la false
         if (timerRef.current) {
           clearTimeout(timerRef.current);
           timerRef.current = null;
@@ -70,10 +82,13 @@ const CartPopup = ({ forceVisible }) => {
         timerRef.current = setTimeout(() => {
           setVisible(false);
           timerRef.current = null;
-        }, 300);
+        }, 1000);
       }}
       onClick={() => navigate("/cart")}
-      className="fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-50 min-w-[250px]"
+      className={`fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-50 min-w-[250px] 
+                  transition-opacity duration-300 ${
+                    visible ? "opacity-300" : "opacity-0"
+                  }`}
     >
       <h3 className="text-sm font-semibold mb-2 text-left">Produse în coș</h3>
       <ul className="space-y-2">

@@ -174,7 +174,7 @@ const Header1 = ({ onSearch }) => {
                   cartHoverTimerRef.current = setTimeout(() => {
                     setIsCartHovered(false);
                     cartHoverTimerRef.current = null;
-                  }, 300); // delay de 0.5 secundă pentru a putea ajunge pe popup
+                  }, 200); // delay de 0.5 secundă pentru a putea ajunge pe popup
                 }
               }}
             >

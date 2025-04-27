@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 
 const Header2 = ({ toggleSidebar }) => {
   return (
-    <div className="w-full bg-white py-1 shadow-md">
+    <div className="w-full bg-gradient-to-t from-white to-stone-100 py-1 shadow-md">
       <div className="flex justify-between items-center px-4">
         {/* Buton pentru mobil */}
         <button

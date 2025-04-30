@@ -64,24 +64,40 @@ const PaymentMethod = ({ orderId }) => {
         selectedCard,
         orderId,
       });
+
       if (!orderId) {
         console.warn("orderId nu este definit!");
         return;
       }
+
       const payload = { payment_method: paymentMethod };
-      if (paymentMethod === "Card") {
-        payload.card_encrypted_data = selectedCard;
+
+      // Dacă se selectează Ramburs, setăm card_encrypted_data la NULL
+      if (paymentMethod === "Ramburs") {
+        payload.card_encrypted_data = null; // Resetăm card_encrypted_data la NULL
       }
+      // Dacă se selectează Card și avem un card salvat, setăm card_encrypted_data la ID-ul cardului salvat
+      else if (paymentMethod === "Card" && selectedCard !== "newCard") {
+        payload.card_encrypted_data = selectedCard; // Actualizăm cu cardul salvat
+      }
+      // Dacă este card nou, putem folosi o valoare specifică
+      else if (paymentMethod === "Card" && selectedCard === "newCard") {
+        payload.card_encrypted_data = "newCard"; // Aici poate fi altă logică pentru cardurile noi
+      }
+
+      // Actualizarea bazei de date
       const { error } = await supabase
         .from("order_details")
         .update(payload)
         .eq("id", orderId);
+
       if (error) {
         console.error("Eroare la actualizarea metodei de plată:", error);
       } else {
         console.log("Update-ul a fost realizat cu succes!");
       }
     };
+
     updatePaymentData();
   }, [paymentMethod, selectedCard, orderId]);
 

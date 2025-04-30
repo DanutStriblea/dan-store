@@ -56,7 +56,7 @@ const CartPopup = ({ forceVisible }) => {
     } else {
       const timeout = setTimeout(() => {
         setShouldRender(false);
-      }, 300); // Durata tranziției CSS (300ms)
+      }, 250); // Durata tranziției CSS (300ms)
       return () => clearTimeout(timeout);
     }
   }, [visible]);

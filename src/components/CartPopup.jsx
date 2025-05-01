@@ -8,14 +8,29 @@ const CartPopup = ({ forceVisible }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // visible controlează dacă popup-ul este activ (pentru opacitate)
   const [visible, setVisible] = useState(false);
-  // shouldRender controlează dacă elementul trebuie montat în DOM
   const [shouldRender, setShouldRender] = useState(false);
   const timerRef = useRef(null);
   const prevCartCountRef = useRef(cartItems.length);
 
-  // Effect pentru auto-popup declanșat de modificarea coșului (atunci când nu avem hover)
+  useEffect(() => {
+    const shouldHidePopup = location.pathname === "/order-confirmation";
+
+    if (shouldHidePopup) {
+      setShouldRender(false);
+      return;
+    }
+
+    if (visible) {
+      setShouldRender(true);
+    } else {
+      const timeout = setTimeout(() => {
+        setShouldRender(false);
+      }, 250); // Durata tranziției CSS (300ms)
+      return () => clearTimeout(timeout);
+    }
+  }, [visible, location.pathname]);
+
   useEffect(() => {
     if (location.pathname === "/cart") {
       setVisible(false);
@@ -34,7 +49,6 @@ const CartPopup = ({ forceVisible }) => {
     }
   }, [cartItems, location.pathname, forceVisible]);
 
-  // Effect pentru a gestiona controlul prin hover
   useEffect(() => {
     if (forceVisible === true) {
       if (timerRef.current) {
@@ -48,18 +62,6 @@ const CartPopup = ({ forceVisible }) => {
       setVisible(false);
     }
   }, [forceVisible]);
-
-  // Effect pentru a menține elementul montat în DOM în timpul tranziției
-  useEffect(() => {
-    if (visible) {
-      setShouldRender(true);
-    } else {
-      const timeout = setTimeout(() => {
-        setShouldRender(false);
-      }, 250); // Durata tranziției CSS (300ms)
-      return () => clearTimeout(timeout);
-    }
-  }, [visible]);
 
   if (!shouldRender) return null;
 

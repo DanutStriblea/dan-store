@@ -26,6 +26,7 @@ import FinalOrderDetails from "./pages/FinalOrderDetails"; // Importă noua pagi
 import OrderConfirmation from "./pages/OrderConfirmation"; // Ruta pentru confirmare comandă
 import { AddressProvider } from "./context/AddressContext";
 import CartPopup from "./components/CartPopup"; // <-- Am adăugat această linie
+import Orders from "./pages/Orders";
 
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -93,6 +94,10 @@ function App() {
                       <Route
                         path="order-confirmation"
                         element={<OrderConfirmation />}
+                      />
+                      <Route
+                        path="orders"
+                        element={<ProtectedRoute element={<Orders />} />}
                       />
                       <Route path="*" element={<NotFound />} />
                     </Route>

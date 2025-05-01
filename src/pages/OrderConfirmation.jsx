@@ -1,6 +1,8 @@
 import { useLocation } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { CartContext } from "../context/CartContext";
 
 const OrderConfirmation = () => {
   const location = useLocation();
@@ -13,6 +15,29 @@ const OrderConfirmation = () => {
 
   // Generează un cod scurt pentru orderId
   const displayOrderId = orderId ? orderId.substring(0, 8) : "N/A";
+
+  const navigate = useNavigate();
+
+  const { clearCart } = useContext(CartContext);
+
+  useEffect(() => {
+    clearCart(); // Golește coșul după confirmarea comenzii
+    window.history.replaceState(null, "", window.location.href);
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (event) => {
+      event.preventDefault();
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-8 p-4">
@@ -49,6 +74,14 @@ const OrderConfirmation = () => {
               {displayOrderId}
             </p>
           )}
+        </div>
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => navigate("/")}
+            className="w-full bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
+          >
+            Înapoi acasă
+          </button>
         </div>
       </div>
     </div>

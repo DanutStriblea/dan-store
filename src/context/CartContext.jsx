@@ -318,6 +318,30 @@ const CartProvider = ({ children }) => {
     }
   };
 
+  const clearCart = async () => {
+    setCartItems([]);
+    localStorage.removeItem("cartItems");
+
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+    if (sessionError) {
+      console.error("Error fetching user session:", sessionError);
+      return;
+    }
+
+    const user = sessionData?.session?.user;
+    if (user) {
+      const { error: dbError } = await supabase
+        .from("cart")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (dbError) {
+        console.error("Error clearing cart in database:", dbError);
+      }
+    }
+  };
+
   // Noua secțiune: ștergerea intrării din order_details când coșul este gol
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -350,6 +374,7 @@ const CartProvider = ({ children }) => {
         getQuantity,
         isInCart,
         resetQuantity,
+        clearCart,
       }}
     >
       {children}

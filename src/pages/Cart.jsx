@@ -56,7 +56,18 @@ const Cart = () => {
 
       <div className="container mx-auto p-3">
         {cartItems.length === 0 && !isLoading && (
-          <h1 className="text-center mt-8">Coșul tău este gol.</h1>
+          <div className="text-center mt-8">
+            <h1 className="text-xl sm:text-3xl font-bold mb-3">
+              Coșul tău este gol
+            </h1>
+            <hr className="border-t  border-gray-200 mb-8" />
+            <Link
+              to="/"
+              className="bg-sky-900 text-white px-3 py-2 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-full sm:w-auto text-center"
+            >
+              Înapoi la cumpărături
+            </Link>
+          </div>
         )}
 
         {cartItems.length > 0 && (
@@ -65,7 +76,7 @@ const Cart = () => {
               <h1 className="text-xl sm:text-3xl font-bold mb-3">
                 Coșul tău de cumpărături
               </h1>
-              <hr className="border-t-2 border-gray-200 mb-8" />
+              <hr className="border-t border-gray-200 mb-8" />
 
               <div className="space-y-4">
                 {cartItems.map((item, index) => (

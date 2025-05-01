@@ -54,7 +54,9 @@ const Favorite = () => {
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-7xl p-2">
-        <h1 className="text-2xl font-bold mb-4">Favoritele mele</h1>
+        {products.length > 0 && (
+          <h1 className="text-2xl font-bold mb-4">Favoritele mele</h1>
+        )}
 
         {loading ? (
           <div className="flex justify-center items-center h-[50vh]">
@@ -106,7 +108,18 @@ const Favorite = () => {
             ))}
           </div>
         ) : (
-          <p className="text-center col-span-full">Nu ai produse favorite.</p>
+          <div className="text-center mt-8">
+            <h1 className="text-xl sm:text-3xl font-bold mb-3">
+              Nu ai produse favorite
+            </h1>
+            <hr className="border-t border-gray-200 mb-8" />
+            <Link
+              to="/"
+              className="bg-sky-900 text-white px-3 py-2 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-full sm:w-auto text-center"
+            >
+              Înapoi la cumpărături
+            </Link>
+          </div>
         )}
       </div>
     </div>

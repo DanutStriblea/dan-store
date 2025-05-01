@@ -7,6 +7,8 @@ import FinalPaymentForm from "../components/FinalPaymentForm";
 import OrderSummary from "../components/OrderSummary";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
+import { supabase } from "../supabaseClient"; // Assuming supabaseClient is correctly configured
+import { v4 as uuidv4 } from "uuid"; // Importăm librăria uuid
 
 // Configurare URL API – dacă process nu este definit, se folosește șir gol (apeluri relative)
 const API_URL =
@@ -58,7 +60,65 @@ const FinalOrderDetails = () => {
   const totalAmount = totalProductCost + deliveryCost;
 
   const handleSubmitOrder = async () => {
-    console.log("Trimitem comanda pentru orderId:", orderId);
+    // Asigurăm un user_id valid din contextul de autentificare
+    if (!user?.id) {
+      console.error(
+        "Utilizatorul nu este autentificat. Nu se poate plasa comanda."
+      );
+      return;
+    }
+
+    const storedCardDetailsString = localStorage.getItem("savedCardDetails");
+    let paymentMethodDetails = paymentMethod;
+
+    if (paymentMethod === "Card" && storedCardDetailsString) {
+      const cardDetails = JSON.parse(storedCardDetailsString);
+      const formattedExp = new Date(
+        Number(cardDetails.exp_year),
+        Number(cardDetails.exp_month) - 1
+      ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
+      paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira in ${formattedExp}`;
+    }
+
+    const orderDataToInsert = {
+      id: uuidv4(),
+      user_id: user.id, // Folosim user_id-ul autentificat
+      name: orderData?.deliveryAddress?.name || "Unknown User",
+      order_number: uuidv4().substring(0, 8),
+      phone_number: orderData?.deliveryAddress?.phone_number || "Unknown Phone",
+      delivery_county: orderData?.deliveryAddress?.county || "Unknown County",
+      delivery_city: orderData?.deliveryAddress?.city || "Unknown City",
+      delivery_address:
+        orderData?.deliveryAddress?.address || "Unknown Address",
+      billing_county: orderData?.billingAddress?.county || "Unknown County",
+      billing_city: orderData?.billingAddress?.city || "Unknown City",
+      billing_address: orderData?.billingAddress?.address || "Unknown Address",
+      payment_method: paymentMethodDetails,
+      products_ordered: JSON.stringify(
+        cartItems.map((item) => ({
+          product_id: item.product_id,
+          product_name: item.products?.title || "Unknown",
+          quantity: item.quantity,
+          price: item.product_price,
+        }))
+      ),
+      order_quantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+      delivery_cost: deliveryCost,
+      order_total: totalAmount,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("submitted_orders")
+        .insert(orderDataToInsert);
+      if (error) {
+        throw new Error(`Eroare la salvarea comenzii: ${error.message}`);
+      }
+      console.log("Comanda a fost salvată cu succes în baza de date.");
+    } catch (err) {
+      console.error("Eroare la salvarea comenzii:", err.message);
+      return;
+    }
 
     if (paymentMethod === "Card" && cardType === "newCard") {
       setShowPaymentForm(true);
@@ -69,7 +129,6 @@ const FinalOrderDetails = () => {
           throw new Error("Nu a fost selectat niciun card salvat.");
         }
         const convertedAmount = Math.round(totalAmount * 100);
-        // Extragem customerId din AuthContext; trebuie să fie salvat pentru utilizatorul autentic.
         const customerId =
           user && user.stripeCustomerId ? user.stripeCustomerId : "cus_test123";
         const response = await fetch(
@@ -81,7 +140,7 @@ const FinalOrderDetails = () => {
               amount: convertedAmount,
               orderId,
               paymentMethodId: selectedSavedCard,
-              customerId, // ID-ul clientului din Stripe
+              customerId,
             }),
           }
         );

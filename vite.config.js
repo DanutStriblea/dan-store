@@ -18,6 +18,14 @@ export default defineConfig(() => {
   return {
     base: basePath,
     plugins: [react()],
+    server: {
+      proxy: {
+        "/api": {
+          target: "http://localhost:4242",
+          changeOrigin: true,
+        },
+      },
+    },
   };
 });
 

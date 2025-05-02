@@ -5,6 +5,9 @@ const express = require("express");
 const cors = require("cors");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
+// Importă funcția de trimitere a emailului de confirmare creată cu Resend
+const sendConfirmationEmail = require("./sendConfirmationEmail");
+
 const app = express();
 const PORT = process.env.PORT || 4242;
 
@@ -36,19 +39,11 @@ app.post("/api/create-payment-intent", async (req, res) => {
 // Endpoint pentru crearea SetupIntent (pentru salvarea cardurilor noi)
 app.post("/api/create-setup-intent", async (req, res) => {
   try {
-    // Extragem date din body; pentru exemplu, emailul este opțional
     const { email } = req.body;
 
-    // Dacă dorești, poți crea sau atașa un customer în Stripe folosind emailul.
-    // Dacă nu ai un customer deja, poți crea unul:
-    // const customer = await stripe.customers.create({ email });
-    // apoi, poți folosi customer.id în setupIntent
-
-    // Pentru un caz de bază, vom crea SetupIntent-ul fără a specifica customer:
+    // Opțional: pune aici logica pentru atașarea sau crearea unui customer în Stripe
     const setupIntent = await stripe.setupIntents.create({
       usage: "off_session",
-      // Dacă ai un customer:
-      // customer: customer.id,
     });
 
     res.status(200).json({ clientSecret: setupIntent.client_secret });
@@ -70,6 +65,23 @@ app.post("/api/retrieve-payment-method", async (req, res) => {
   } catch (err) {
     console.error("Error retrieving PaymentMethod:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint nou pentru trimiterea emailului de confirmare a comenzii
+app.post("/api/send-confirmation-email", async (req, res) => {
+  try {
+    // Se așteaptă un obiect "order" în corpul request-ului
+    const order = req.body;
+    console.log("Date primite pentru trimiterea emailului:", order);
+    const response = await sendConfirmationEmail(order);
+    console.log("Răspuns de la funcția sendConfirmationEmail:", response);
+    res.status(200).json({ message: "Email de confirmare trimis cu succes!" });
+  } catch (error) {
+    console.error("Eroare la trimiterea emailului de confirmare:", error);
+    res
+      .status(500)
+      .json({ error: "Eroare la trimiterea emailului de confirmare." });
   }
 });
 

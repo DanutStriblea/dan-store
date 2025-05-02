@@ -10,19 +10,22 @@ import {
 import PropTypes from "prop-types";
 import { supabase } from "../supabaseClient";
 import { AuthContext } from "../context/AuthContext";
+import { CartContext } from "../context/CartContext"; // Importăm contextul coșului
 
 // Folosim import.meta.env pentru variabilele de mediu în Vite
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-const FinalPaymentForm = ({ orderId, amount, onClose }) => {
+// Adăugăm 'orderData' în props, pentru a putea extrage datele de livrare
+const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { cartItems } = useContext(CartContext); // Preluăm produsele din coș
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [cardholderName, setCardholderName] = useState("");
+  const [cardholderName, setCardholderName] = useState(""); // Poți păstra această stare dacă o mai folosești în alte părți
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
 
@@ -163,11 +166,20 @@ const FinalPaymentForm = ({ orderId, amount, onClose }) => {
         }
         console.log("Plată confirmată:", paymentIntent);
       }
-      navigate(
-        `/order-confirmation?orderId=${orderId}&email=${encodeURIComponent(
-          cardholderName
-        )}`
-      );
+      // Navigăm către pagina de Order Confirmation, transmițând datele comenzii prin state
+      navigate(`/order-confirmation?orderId=${orderId}`, {
+        state: {
+          orderTotal: amount,
+          productsOrdered: cartItems.map((item) => ({
+            product_id: item.product_id,
+            product_name: item.products?.title || "Unknown",
+            quantity: item.quantity,
+            price: item.product_price,
+          })),
+          // Folosim numele din adresa de livrare, obținut din orderData
+          name: orderData?.deliveryAddress?.name,
+        },
+      });
     } catch (err) {
       console.error("Eroare la procesarea plății:", err.message);
       setErrorMessage(err.message);
@@ -297,4 +309,15 @@ FinalPaymentForm.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 
+FinalPaymentForm.propTypes = {
+  orderId: PropTypes.string.isRequired,
+  amount: PropTypes.number.isRequired,
+  orderData: PropTypes.shape({
+    deliveryAddress: PropTypes.shape({
+      name: PropTypes.string,
+      // poți adăuga și alte câmpuri după necesitate
+    }),
+  }).isRequired,
+  onClose: PropTypes.func,
+};
 export default FinalPaymentForm;

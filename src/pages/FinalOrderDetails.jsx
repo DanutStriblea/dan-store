@@ -83,6 +83,7 @@ const FinalOrderDetails = () => {
     const orderDataToInsert = {
       id: uuidv4(),
       user_id: user.id, // Folosim user_id-ul autentificat
+      email: user.email, // Adăugăm emailul utilizatorului
       name: orderData?.deliveryAddress?.name || "Unknown User",
       order_number: uuidv4().substring(0, 8),
       phone_number: orderData?.deliveryAddress?.phone_number || "Unknown Phone",
@@ -94,6 +95,8 @@ const FinalOrderDetails = () => {
       billing_city: orderData?.billingAddress?.city || "Unknown City",
       billing_address: orderData?.billingAddress?.address || "Unknown Address",
       payment_method: paymentMethodDetails,
+      // Stocăm array-ul de produse ca șir JSON pentru inserare în DB,
+      // dar apoi îl vom converta la apelul de email.
       products_ordered: JSON.stringify(
         cartItems.map((item) => ({
           product_id: item.product_id,
@@ -105,6 +108,7 @@ const FinalOrderDetails = () => {
       order_quantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
       delivery_cost: deliveryCost,
       order_total: totalAmount,
+      created_at: new Date().toISOString(), // Adăugăm timestamp-ul comenzii
     };
 
     try {
@@ -151,13 +155,35 @@ const FinalOrderDetails = () => {
           );
         }
         console.log("Plată procesată cu succes:", data.paymentIntent);
-        navigate(`/order-confirmation?orderId=${orderId}`);
+        navigate(`/order-confirmation?orderId=${orderId}`, {
+          state: {
+            orderTotal: totalAmount,
+            productsOrdered: cartItems.map((item) => ({
+              product_id: item.product_id,
+              product_name: item.products?.title || "Unknown",
+              quantity: item.quantity,
+              price: item.product_price,
+            })),
+            name: orderData?.deliveryAddress?.name, // Transmiți numele aici
+          },
+        });
       } catch (err) {
         console.error("Eroare la procesarea plății:", err.message);
       }
     } else if (paymentMethod === "Ramburs") {
       console.log("Procesăm comanda Ramburs pentru orderId:", orderId);
-      navigate(`/order-confirmation?orderId=${orderId}`);
+      navigate(`/order-confirmation?orderId=${orderId}`, {
+        state: {
+          orderTotal: totalAmount,
+          productsOrdered: cartItems.map((item) => ({
+            product_id: item.product_id,
+            product_name: item.products?.title || "Unknown",
+            quantity: item.quantity,
+            price: item.product_price,
+          })),
+          name: orderData?.deliveryAddress?.name, // Asigură-te că e inclus aici!
+        },
+      });
     }
   };
 
@@ -211,8 +237,8 @@ const FinalOrderDetails = () => {
               {paymentSummary
                 ? paymentSummary
                 : paymentMethod === "Card"
-                ? `Card (${cardType === "newCard" ? "nou" : "salvat"})`
-                : paymentMethod}
+                  ? `Card (${cardType === "newCard" ? "nou" : "salvat"})`
+                  : paymentMethod}
             </p>
           </div>
           <button
@@ -256,6 +282,7 @@ const FinalOrderDetails = () => {
               <FinalPaymentForm
                 orderId={orderId}
                 amount={totalAmount}
+                orderData={orderData}
                 onClose={() => setShowPaymentForm(false)}
               />
             </Elements>

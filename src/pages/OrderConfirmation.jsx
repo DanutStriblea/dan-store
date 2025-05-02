@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
@@ -9,22 +9,26 @@ const OrderConfirmation = () => {
   const queryParams = new URLSearchParams(location.search);
   const orderId = queryParams.get("orderId");
 
-  // Extragem și email-ul din context
+  // Extrage emailul din contextul de autentificare
   const { user } = useContext(AuthContext);
   const email = user?.email || "adresa de e-mail nu a fost furnizată";
 
-  // Generează un cod scurt pentru orderId
+  // Extrage numele transmis prin location.state (din FinalOrderDetails)
+  const nameFromState = location.state?.name;
+
+  // Codul afișat din orderId (primele 8 caractere)
   const displayOrderId = orderId ? orderId.substring(0, 8) : "N/A";
 
   const navigate = useNavigate();
-
   const { clearCart } = useContext(CartContext);
 
+  // Golește coșul după confirmarea comenzii
   useEffect(() => {
-    clearCart(); // Golește coșul după confirmarea comenzii
+    clearCart();
     window.history.replaceState(null, "", window.location.href);
   }, []);
 
+  // Previne revenirea pe pagina anterioară
   useEffect(() => {
     const handlePopState = (event) => {
       event.preventDefault();
@@ -38,6 +42,59 @@ const OrderConfirmation = () => {
       window.removeEventListener("popstate", handlePopState);
     };
   }, []);
+
+  // Folosim un ref pentru a preveni trimiterea dublă a emailului
+  const emailSentRef = useRef(false);
+
+  // Trimite emailul de confirmare (DOAR dacă avem orderId și email)
+  useEffect(() => {
+    const sendConfirmationEmail = async () => {
+      try {
+        const orderTotal = location.state?.orderTotal || 0;
+        const productsOrdered = location.state?.productsOrdered || [];
+
+        if (!orderTotal || productsOrdered.length === 0) {
+          console.error("Datele comenzii sunt incomplete:", {
+            orderTotal,
+            productsOrdered,
+          });
+          return;
+        }
+
+        const response = await fetch("/api/send-confirmation-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId,
+            email,
+            name: nameFromState || user?.name || "Client Fără Nume",
+            order_number: orderId?.substring(0, 8) || "Comandă Necunoscută",
+            order_total: orderTotal,
+            created_at: new Date().toISOString(),
+            products_ordered: productsOrdered,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Eroare la trimiterea emailului de confirmare.");
+        }
+
+        console.log("✅ Email de confirmare trimis cu succes!");
+      } catch (error) {
+        console.error(
+          "❌ Eroare la trimiterea emailului de confirmare:",
+          error
+        );
+      }
+    };
+
+    if (orderId && email && !emailSentRef.current) {
+      emailSentRef.current = true;
+      sendConfirmationEmail();
+    }
+  }, [orderId, email]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-8 p-4">

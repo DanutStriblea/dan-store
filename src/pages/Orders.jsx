@@ -92,7 +92,7 @@ const Orders = () => {
                 {/* Stânga: Detalii comanda */}
                 <div>
                   <h2 className="text-l font-bold text-sky-900">
-                    Comanda nr. {order.order_number}
+                    Comanda Nr. {order.order_number}
                   </h2>
                   <div className="flex items-center text-xs text-gray-500 mt-1">
                     <span>

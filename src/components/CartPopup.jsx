@@ -87,7 +87,7 @@ const CartPopup = ({ forceVisible }) => {
         }, 1000);
       }}
       onClick={() => navigate("/cart")}
-      className={`fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-50 min-w-[250px] 
+      className={`fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-[9000] min-w-[250px] 
                   transition-opacity duration-300 ${
                     visible ? "opacity-300" : "opacity-0"
                   }`}

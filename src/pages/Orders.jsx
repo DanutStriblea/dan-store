@@ -69,8 +69,17 @@ const Orders = () => {
 
   if (!orders || orders.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        No completed orders found.
+      <div className="text-center mt-8">
+        <h1 className="text-xl sm:text-3xl font-bold mb-3">
+          Nu ai comenzi finalizate
+        </h1>
+        <hr className="border-t border-gray-200 mb-8" />
+        <Link
+          to="/"
+          className="bg-sky-900 text-white px-3 py-2 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-full sm:w-auto text-center"
+        >
+          Înapoi la cumpărături
+        </Link>
       </div>
     );
   }
@@ -114,7 +123,7 @@ const Orders = () => {
               </div>
             </div>
 
-            {/* Adrese & Metoda de plată – folosind grid-ul pentru a păstra dimensiunea originală a chenarelor */}
+            {/* Adrese & Metoda de plată */}
             <div className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {/* Livrare - Adresa de livrare */}

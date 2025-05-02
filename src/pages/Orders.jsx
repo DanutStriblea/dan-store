@@ -84,22 +84,22 @@ const Orders = () => {
         {orders.map((order) => (
           <div
             key={order.id}
-            className="bg-white shadow-lg rounded-xl overflow-hidden max-w-[800px] mx-auto"
+            className="bg-slate-50 shadow-lg shadow-slate-400 rounded-xl overflow-hidden max-w-[800px] mx-auto"
           >
             {/* Header: Order number, data, status și total */}
-            <div className="bg-gray-100 p-4 border-b">
+            <div className="bg-slate-200 p-4 border-b">
               <div className="flex justify-between items-center">
                 {/* Stânga: Detalii comanda */}
                 <div>
-                  <h2 className="text-xl font-bold text-sky-900">
-                    Order #{order.order_number}
+                  <h2 className="text-l font-bold text-sky-900">
+                    Comanda nr. {order.order_number}
                   </h2>
                   <div className="flex items-center text-xs text-gray-500 mt-1">
                     <span>
                       {new Date(order.created_at).toLocaleDateString()}
                     </span>
                     <span className="mx-2">&bull;</span>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full">
                       {order.status || "in procesare"}
                     </span>
                   </div>
@@ -107,7 +107,7 @@ const Orders = () => {
                 {/* Dreapta: Total */}
                 <div className="text-right">
                   <p className="text-sky-900 text-sm">Total</p>
-                  <p className="text-xl font-bold text-sky-900">
+                  <p className="text-l font-bold text-sky-900">
                     {order.order_total} RON
                   </p>
                 </div>
@@ -188,7 +188,7 @@ const Orders = () => {
                   className="bg-pink-100 hover:bg-pink-200 text-pink-800 text-xs font-semibold py-1 px-2 rounded transition duration-200"
                   onClick={() =>
                     alert(
-                      `Returnează inițiat pentru Order #${order.order_number}`
+                      `Functionalitate neimplementata Order ${order.order_number}`
                     )
                   }
                 >
@@ -198,7 +198,7 @@ const Orders = () => {
                   className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold py-1 px-2 rounded transition duration-200"
                   onClick={() =>
                     alert(
-                      `Anulează comanda pentru Order #${order.order_number}`
+                      `Functionalitate neimplementata Order ${order.order_number}`
                     )
                   }
                 >

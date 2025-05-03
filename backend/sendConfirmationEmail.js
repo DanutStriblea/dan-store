@@ -1,6 +1,4 @@
-// sendConfirmationEmail.js
-
-// Încarcă variabilele de mediu (dacă nu le-ai încărcat deja în server.js)
+// Încarcă variabilele de mediu (doar local, pentru producție Vercel folosește env vars din dashboard)
 require("dotenv").config();
 
 const { Resend } = require("resend");
@@ -12,7 +10,7 @@ const isValidEmail = (email) => {
 };
 
 const sendConfirmationEmail = async (order) => {
-  // Extragem câmpurile importante din obiect
+  // Extragem câmpurile importante din obiectul order
   let { email, name, order_number, order_total, created_at, products_ordered } =
     order;
 
@@ -48,7 +46,7 @@ const sendConfirmationEmail = async (order) => {
     }
   }
 
-  // Construim listele de produse pentru email (text și HTML)
+  // Construim listele de produse (pentru text și HTML)
   const productListText = products_ordered
     .map((p) => `${p.product_name} - ${p.quantity} x ${p.price} RON`)
     .join("\n");
@@ -59,27 +57,16 @@ const sendConfirmationEmail = async (order) => {
 
   try {
     console.log("Datele trimise către Resend:", {
-      from: "Acme <onboarding@resend.dev", // Pentru test, folosești un sender valid; pe producție folosește unul verificat
+      from: "Acme <onboarding@resend.dev", // **Notă:** Aici lipsește în log caracterul ">" – în apelul efectiv, folosește: "Acme <onboarding@resend.dev>"
       to: email,
       subject: `Confirmare comandă - ${order_number}`,
       text: `Bună ${name},\n\nComanda ta cu numărul ${order_number} a fost plasată cu succes pe ${created_at}.\n\nProduse comandate:\n${productListText}\n\nTotal: ${order_total} RON\n\nMulțumim pentru comandă!`,
       html: `<p>Bună ${name},</p><p>Comanda ta cu numărul <strong>${order_number}</strong> a fost plasată cu succes pe ${created_at}.</p><ul>${productListHtml}</ul><p><strong>Total: ${order_total} RON</strong></p><p>Mulțumim pentru comandă!</p>`,
     });
 
-    // Adăugăm loguri suplimentare pentru a verifica datele transmise
-    console.log("Email destinat:", email);
-    console.log("Subiect email:", `Confirmare comandă - ${order_number}`);
-    console.log(
-      "Conținut text email:",
-      `Bună ${name},\n\nComanda ta cu numărul ${order_number} a fost plasată cu succes pe ${created_at}.\n\nProduse comandate:\n${productListText}\n\nTotal: ${order_total} RON\n\nMulțumim pentru comandă!`
-    );
-    console.log(
-      "Conținut HTML email:",
-      `<p>Bună ${name},</p><p>Comanda ta cu numărul <strong>${order_number}</strong> a fost plasată cu succes pe ${created_at}.</p><ul>${productListHtml}</ul><p><strong>Total: ${order_total} RON</strong></p><p>Mulțumim pentru comandă!</p>`
-    );
-
+    // Apelul efectiv către Resend:
     const response = await resend.emails.send({
-      from: "Acme <onboarding@resend.dev>", // Pentru test, folosești un sender valid; pe producție folosește unul verificat
+      from: "Acme <onboarding@resend.dev>", // Asigură-te că aici stringul este complet
       to: email,
       subject: `Confirmare comandă - ${order_number}`,
       text: `Bună ${name},
@@ -100,7 +87,7 @@ Mulțumim pentru comandă!`,
     });
 
     console.log("Răspuns complet de la Resend:", response);
-    console.log("Răspuns de la Resend:", response);
+    return response;
   } catch (error) {
     console.error("Eroare la trimiterea emailului de confirmare:", error);
     throw error;

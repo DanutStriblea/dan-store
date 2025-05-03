@@ -22,6 +22,10 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // Golește coșul după confirmarea comenzii
   useEffect(() => {
     clearCart();

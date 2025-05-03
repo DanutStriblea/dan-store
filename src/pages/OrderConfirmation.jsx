@@ -118,7 +118,7 @@ const OrderConfirmation = () => {
         </h1>
         <div className="mb-4">
           <p className="text-gray-700 text-center">
-            V-am trimis o confirmare pe adresa de e-mail:
+            O confirmare a fost trimisa pe adresa:
           </p>
           <p className="text-gray-700 text-center font-bold">{email}</p>
         </div>

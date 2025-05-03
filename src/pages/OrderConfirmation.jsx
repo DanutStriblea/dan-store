@@ -98,11 +98,11 @@ const OrderConfirmation = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-8 p-4">
-      <div className="bg-white shadow-lg rounded-lg p-8 max-w-lg w-full">
+      <div className="bg-white shadow-lg shadow-gray-400 rounded-lg p-8 max-w-lg w-full">
         <div className="flex justify-center mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 text-green-500"
+            className="h-12 w-12 text-green-500 md:h-16 md:w-16"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
@@ -113,7 +113,7 @@ const OrderConfirmation = () => {
             />
           </svg>
         </div>
-        <h1 className="text-3xl font-bold text-center text-green-600 mb-6">
+        <h1 className="text-xl font-bold text-center text-green-600 mb-6">
           Vă mulțumim pentru comandă!
         </h1>
         <div className="mb-4">
@@ -136,13 +136,13 @@ const OrderConfirmation = () => {
           <div className="flex justify-between items-center w-full max-w-md mx-auto mt-6">
             <button
               onClick={() => navigate("/")}
-              className="w-40 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
+              className="w-30 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
             >
               Înapoi acasă
             </button>
             <button
               onClick={() => navigate("/orders")}
-              className="w-40 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
+              className="w-30 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
             >
               Către comenzi
             </button>

@@ -133,12 +133,20 @@ const OrderConfirmation = () => {
           )}
         </div>
         <div className="flex justify-center mt-6">
-          <button
-            onClick={() => navigate("/")}
-            className="w-full bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
-          >
-            Înapoi acasă
-          </button>
+          <div className="flex justify-between items-center w-full max-w-md mx-auto mt-6">
+            <button
+              onClick={() => navigate("/")}
+              className="w-40 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
+            >
+              Înapoi acasă
+            </button>
+            <button
+              onClick={() => navigate("/orders")}
+              className="w-40 bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
+            >
+              Către comenzi
+            </button>
+          </div>
         </div>
       </div>
     </div>

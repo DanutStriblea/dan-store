@@ -25,13 +25,14 @@ const OrderConfirmation = () => {
   const [orderTotal, setOrderTotal] = useState(null);
   const [productsOrdered, setProductsOrdered] = useState([]);
 
-  // La montare, preluăm datele din location.state dacă există, altfel din localStorage
+  // La montare, preluăm datele din location.state (dacă există) sau din localStorage
   useEffect(() => {
     if (
       location.state &&
       location.state.orderTotal &&
       location.state.productsOrdered
     ) {
+      console.log("Preluăm datele din location.state");
       setOrderTotal(location.state.orderTotal);
       setProductsOrdered(location.state.productsOrdered);
       localStorage.setItem("orderTotal", location.state.orderTotal);
@@ -40,6 +41,7 @@ const OrderConfirmation = () => {
         JSON.stringify(location.state.productsOrdered)
       );
     } else {
+      console.log("Preluăm datele din localStorage");
       const storedOrderTotal = localStorage.getItem("orderTotal");
       const storedProductsOrdered = localStorage.getItem("productsOrdered");
       if (storedOrderTotal) {
@@ -47,7 +49,8 @@ const OrderConfirmation = () => {
       }
       if (storedProductsOrdered) {
         try {
-          setProductsOrdered(JSON.parse(storedProductsOrdered));
+          const parsedProducts = JSON.parse(storedProductsOrdered);
+          setProductsOrdered(parsedProducts);
         } catch (error) {
           console.error(
             "Eroare la parsarea productsOrdered din localStorage:",
@@ -56,28 +59,33 @@ const OrderConfirmation = () => {
         }
       }
     }
-    // Rulăm acest effect doar la montare
-  }, []);
+    // Debug: afișăm valorile curente
+    console.log(
+      "orderTotal:",
+      orderTotal,
+      " productsOrdered:",
+      productsOrdered
+    );
+  }, [location.state]);
 
-  // Amânăm clearCart pentru a permite citirea datelor comenzii
+  // Amânăm clearCart pentru a permite preluarea datelor de comandă
   useEffect(() => {
-    // Amânăm golirea coșului cu 5 secunde pentru a acorda timp de citire
+    // Amânăm golirea coșului cu 5 secunde
     const timer = setTimeout(() => {
       clearCart();
-      // Dacă dorești, poți șterge datele din localStorage aici:
+      // Opțional: curățăm și localStorage, dacă nu mai este nevoie de datele comenzii
       // localStorage.removeItem("orderTotal");
       // localStorage.removeItem("productsOrdered");
-    }, 3000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [clearCart]);
 
-  // Previne revenirea pe pagina anterioară cu un singur eventListener
+  // Previne revenirea pe pagina anterioară
   useEffect(() => {
     const handlePopState = (event) => {
       event.preventDefault();
       window.history.pushState(null, "", window.location.href);
     };
-
     window.history.pushState(null, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
     return () => {
@@ -88,10 +96,9 @@ const OrderConfirmation = () => {
   // Folosim un ref pentru a preveni trimiterea dublă a emailului
   const emailSentRef = useRef(false);
 
-  // Trimite emailul de confirmare doar dacă avem orderId, email și date complete
+  // Trimite emailul de confirmare (doar dacă datele sunt complete)
   useEffect(() => {
     const sendConfirmationEmail = async () => {
-      // Asigură-te că datele comenzii sunt disponibile
       if (!orderTotal || productsOrdered.length === 0) {
         console.error("Datele comenzii sunt incomplete:", {
           orderTotal,

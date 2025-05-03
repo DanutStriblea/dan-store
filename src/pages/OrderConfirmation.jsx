@@ -9,7 +9,7 @@ const OrderConfirmation = () => {
   const queryParams = new URLSearchParams(location.search);
   const orderId = queryParams.get("orderId");
 
-  // Extrage emailul din contextul de autentificare
+  // Extrage email-ul din contextul de autentificare
   const { user } = useContext(AuthContext);
   const email = user?.email || "adresa de e-mail nu a fost furnizată";
 

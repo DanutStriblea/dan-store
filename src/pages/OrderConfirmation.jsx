@@ -22,13 +22,16 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // Scroll abrupt la top după montarea componentei (folosind useEffect cu setTimeout)
+  // Scroll abrupt la top (folosind useEffect cu setTimeout și dezactivând scrollRestoration)
   useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
     setTimeout(() => {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
-    }, 0);
+    }, 300);
   }, []);
 
   // Golește coșul după confirmarea comenzii

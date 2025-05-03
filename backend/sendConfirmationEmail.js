@@ -1,6 +1,6 @@
 // Încarcă variabilele de mediu (doar local, pentru producție Vercel folosește env vars din dashboard)
 require("dotenv").config();
-
+import { resend } from "resend"; // Asigură-te că ai instalat Resend SDK: npm install resend
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 

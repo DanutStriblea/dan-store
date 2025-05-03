@@ -68,7 +68,7 @@ const sendConfirmationEmail = async (order) => {
     const response = await resend.emails.send({
       from: "Acme <onboarding@resend.dev>", // Asigură-te că aici stringul este complet
       to: email,
-      subject: `Confirmare comandă - ${order_number}`,
+      subject: `Confirmare comandă dan-store - ${order_number}`,
       text: `Bună ${name},
 
 Comanda ta cu numărul ${order_number} a fost plasată cu succes pe ${created_at}.

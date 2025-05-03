@@ -57,7 +57,7 @@ const sendConfirmationEmail = async (order) => {
 
   try {
     console.log("Datele trimise către Resend:", {
-      from: "Acme <onboarding@resend.dev", // **Notă:** Aici lipsește în log caracterul ">" – în apelul efectiv, folosește: "Acme <onboarding@resend.dev>"
+      from: "Acme <onboarding@resend.dev>", // **Notă:** Aici lipsește în log caracterul ">" – în apelul efectiv, folosește: "Acme <onboarding@resend.dev>"
       to: email,
       subject: `Confirmare comandă - ${order_number}`,
       text: `Bună ${name},\n\nComanda ta cu numărul ${order_number} a fost plasată cu succes pe ${created_at}.\n\nProduse comandate:\n${productListText}\n\nTotal: ${order_total} RON\n\nMulțumim pentru comandă!`,

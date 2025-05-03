@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useContext, useLayoutEffect, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
@@ -22,12 +22,13 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // Scroll abrupt la top (folosind useLayoutEffect)
-  useLayoutEffect(() => {
-    // Dacă containerul scrollabil este fereastra
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+  // Scroll abrupt la top după montarea componentei (folosind useEffect cu setTimeout)
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }, 0);
   }, []);
 
   // Golește coșul după confirmarea comenzii

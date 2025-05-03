@@ -5,6 +5,9 @@ import { Link } from "react-router-dom";
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Folosim o stare care reține id-ul comenzii expandate;
+  // dacă e null, nicio comandă nu este deschisă.
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -59,6 +62,14 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  // Funcție de toggle: dacă comanda dată e deja deschisă, o închide (setează null),
+  // altfel setează expandedOrderId la id-ul comenzii respective.
+  const toggleOrder = (orderId) => {
+    setExpandedOrderId((prevOrderId) =>
+      prevOrderId === orderId ? null : orderId
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -95,10 +106,13 @@ const Orders = () => {
             key={order.id}
             className="bg-slate-50 shadow-lg shadow-slate-400 rounded-xl overflow-hidden max-w-[800px] mx-auto"
           >
-            {/* Header: Order number, data, status și total */}
-            <div className="bg-slate-200 p-4 border-b">
+            {/* Header: Order number, data, status, total și toggle (dropdown) */}
+            <div
+              onClick={() => toggleOrder(order.id)}
+              className="bg-slate-200 p-4 border-b cursor-pointer"
+            >
               <div className="flex justify-between items-center">
-                {/* Stânga: Detalii comanda */}
+                {/* Stânga: Detalii comandă */}
                 <div>
                   <h2 className="text-l font-bold text-sky-900">
                     Comanda Nr. {order.order_number}
@@ -113,108 +127,130 @@ const Orders = () => {
                     </span>
                   </div>
                 </div>
-                {/* Dreapta: Total */}
-                <div className="text-right">
-                  <p className="text-sky-900 text-sm">Total</p>
-                  <p className="text-l font-bold text-sky-900">
-                    {order.order_total} RON
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Adrese & Metoda de plată */}
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                {/* Livrare - Adresa de livrare */}
-                <div className="bg-gray-50 p-3 rounded-md border">
-                  <h3 className="text-sm font-semibold mb-1">Livrare</h3>
-                  <p className="text-gray-700 text-sm">
-                    {order.delivery_address}
-                  </p>
-                  <p className="text-gray-700 text-sm">
-                    {order.delivery_city}, {order.delivery_country}
-                  </p>
-                </div>
-                {/* Facturare - Adresa de facturare */}
-                <div className="bg-gray-50 p-3 rounded-md border">
-                  <h3 className="text-sm font-semibold mb-1">Facturare</h3>
-                  <p className="text-gray-700 text-sm">
-                    {order.billing_address}
-                  </p>
-                  <p className="text-gray-700 text-sm">
-                    {order.billing_city}, {order.billing_country}
-                  </p>
-                </div>
-                {/* Metoda de plată */}
-                <div className="bg-gray-50 p-3 rounded-md border">
-                  <h3 className="text-sm font-semibold mb-1">
-                    Metoda de plată
-                  </h3>
-                  <p className="text-gray-700 text-sm">
-                    {order.payment_method}
-                  </p>
-                </div>
-              </div>
-
-              {/* Produse comandate */}
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">
-                  Produse comandate
-                </h3>
-                <ul className="divide-y divide-gray-200">
-                  {order.products_ordered.map((product, index) => (
-                    <li
-                      key={index}
-                      className="py-3 flex items-center space-x-3"
+                {/* Dreapta: Total și icon toggle */}
+                <div className="flex flex-col justify-center items-end">
+                  <div className="text-right">
+                    <p className="text-sky-900 text-sm">Total</p>
+                    <p className="text-l font-bold text-sky-900">
+                      {order.order_total} RON
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <svg
+                      className={`h-6 w-6 transition-transform duration-300 ${
+                        expandedOrderId === order.id ? "rotate-180" : "rotate-0"
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      <Link
-                        to={`/product/${product.product_id}`}
-                        className="flex items-center space-x-3"
-                      >
-                        <img
-                          src={product.image}
-                          alt={product.product_name}
-                          className="w-16 h-16 object-cover rounded-md border"
-                        />
-                        <div>
-                          <p className="font-semibold text-gray-800">
-                            {product.product_name}
-                          </p>
-                          <p className="text-gray-600 text-sm">
-                            {product.quantity} x {product.price} RON
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Butoane de acțiune */}
-              <div className="flex justify-end space-x-2 mt-4">
-                <button
-                  className="bg-pink-100 hover:bg-pink-200 text-pink-800 text-xs font-semibold py-1 px-2 rounded transition duration-200"
-                  onClick={() =>
-                    alert(
-                      `Functionalitate neimplementata Order ${order.order_number}`
-                    )
-                  }
-                >
-                  Returnează
-                </button>
-                <button
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold py-1 px-2 rounded transition duration-200"
-                  onClick={() =>
-                    alert(
-                      `Functionalitate neimplementata Order ${order.order_number}`
-                    )
-                  }
-                >
-                  Anulează comanda
-                </button>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Dropdown: Adrese & Produse comandate (afișează dacă expandedOrderId este egal cu order.id) */}
+            {expandedOrderId === order.id && (
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  {/* Livrare - Adresa de livrare */}
+                  <div className="bg-gray-50 p-3 rounded-md border">
+                    <h3 className="text-sm font-semibold mb-1">Livrare</h3>
+                    <p className="text-gray-700 text-sm">
+                      {order.delivery_address}
+                    </p>
+                    <p className="text-gray-700 text-sm">
+                      {order.delivery_city}, {order.delivery_country}
+                    </p>
+                  </div>
+                  {/* Facturare - Adresa de facturare */}
+                  <div className="bg-gray-50 p-3 rounded-md border">
+                    <h3 className="text-sm font-semibold mb-1">Facturare</h3>
+                    <p className="text-gray-700 text-sm">
+                      {order.billing_address}
+                    </p>
+                    <p className="text-gray-700 text-sm">
+                      {order.billing_city}, {order.billing_country}
+                    </p>
+                  </div>
+                  {/* Metoda de plată */}
+                  <div className="bg-gray-50 p-3 rounded-md border">
+                    <h3 className="text-sm font-semibold mb-1">
+                      Metoda de plată
+                    </h3>
+                    <p className="text-gray-700 text-sm">
+                      {order.payment_method}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Produse comandate */}
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">
+                    Produse comandate
+                  </h3>
+                  <ul className="divide-y divide-gray-200">
+                    {order.products_ordered.map((product, index) => (
+                      <li
+                        key={index}
+                        className="py-3 flex items-center space-x-3"
+                      >
+                        <Link
+                          to={`/product/${product.product_id}`}
+                          className="flex items-center space-x-3"
+                        >
+                          <img
+                            src={product.image}
+                            alt={product.product_name}
+                            className="w-16 h-16 object-cover rounded-md border"
+                          />
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {product.product_name}
+                            </p>
+                            <p className="text-gray-600 text-sm">
+                              {product.quantity} x {product.price} RON
+                            </p>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Butoane de acțiune */}
+                <div className="flex justify-end space-x-2 mt-4">
+                  <button
+                    className="bg-pink-100 hover:bg-pink-200 text-pink-800 text-xs font-semibold py-1 px-2 rounded transition duration-200"
+                    onClick={() =>
+                      alert(
+                        `Functionalitate neimplementata Order ${order.order_number}`
+                      )
+                    }
+                  >
+                    Returnează
+                  </button>
+                  <button
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-semibold py-1 px-2 rounded transition duration-200"
+                    onClick={() =>
+                      alert(
+                        `Functionalitate neimplementata Order ${order.order_number}`
+                      )
+                    }
+                  >
+                    Anulează comanda
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -85,7 +85,7 @@ const FinalOrderDetails = () => {
       user_id: user.id, // Folosim user_id-ul autentificat
       email: user.email, // Adăugăm emailul utilizatorului
       name: orderData?.deliveryAddress?.name || "Unknown User",
-      order_number: uuidv4().substring(0, 8),
+      order_number: orderId.substring(0, 8),
       phone_number: orderData?.deliveryAddress?.phone_number || "Unknown Phone",
       delivery_county: orderData?.deliveryAddress?.county || "Unknown County",
       delivery_city: orderData?.deliveryAddress?.city || "Unknown City",

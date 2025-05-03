@@ -217,7 +217,9 @@ const Orders = () => {
                               {product.product_name}
                             </p>
                             <p className="text-gray-600 text-sm">
-                              {product.quantity} x {product.price} RON
+                              {product.quantity} x{" "}
+                              {(product.price / product.quantity).toFixed(2)}{" "}
+                              RON
                             </p>
                           </div>
                         </Link>

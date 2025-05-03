@@ -44,7 +44,7 @@ const DeliveryMethod = ({
           );
 
           if (deliveryAddress) {
-            setSelectedAddress(deliveryAddress); // Setăm adresa selectată
+            setSelectedAddress(deliveryAddress); // Setam adresa selectată
             console.log(
               "Adresa selectată sincronizată din Supabase:",
               deliveryAddress
@@ -74,7 +74,7 @@ const DeliveryMethod = ({
     }
   }, [addresses, favoriteAddress, orderId, setSelectedAddress]);
 
-  // 2. Sincronizare automată când `selectedAddress` se schimbă
+  // 2. Sincronizarea automată când `selectedAddress` se schimbă
   useEffect(() => {
     const syncWithSupabase = async () => {
       if (!selectedAddress?.id || !orderId) {

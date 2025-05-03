@@ -168,7 +168,7 @@ const Orders = () => {
                       {order.delivery_address}
                     </p>
                     <p className="text-gray-700 text-sm">
-                      {order.delivery_city}, {order.delivery_country}
+                      {order.delivery_city}, {order.delivery_county}
                     </p>
                   </div>
                   {/* Facturare - Adresa de facturare */}
@@ -178,7 +178,7 @@ const Orders = () => {
                       {order.billing_address}
                     </p>
                     <p className="text-gray-700 text-sm">
-                      {order.billing_city}, {order.billing_country}
+                      {order.billing_city}, {order.billing_county}
                     </p>
                   </div>
                   {/* Metoda de plată */}

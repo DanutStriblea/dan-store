@@ -22,8 +22,13 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
+  // Forțăm scroll-ul la poziția 0 după montarea componentei, folosind setTimeout
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }, 100);
   }, []);
 
   // Golește coșul după confirmarea comenzii
@@ -122,7 +127,7 @@ const OrderConfirmation = () => {
         </h1>
         <div className="mb-4">
           <p className="text-gray-700 text-center">
-            O confirmare a fost trimisa pe adresa:
+            O confirmare a fost trimisă pe adresa:
           </p>
           <p className="text-gray-700 text-center font-bold">{email}</p>
         </div>

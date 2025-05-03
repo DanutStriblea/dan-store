@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 
 const OrderConfirmation = () => {
+  // Creăm un ref pentru containerul de la top
+  const containerRef = useRef(null);
+
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const orderId = queryParams.get("orderId");
@@ -22,16 +25,14 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // Scroll abrupt la top (folosind useEffect cu setTimeout și dezactivând scrollRestoration)
+  // Forțăm scroll-ul în partea de sus a containerului folosind ref-ul
   useEffect(() => {
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
+    if (containerRef.current) {
+      // scrollIntoView va aduce partea de sus a elementului (block: 'start') în view
+      containerRef.current.scrollIntoView({ behavior: "auto", block: "start" });
     }
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }, 300);
+    // De asemenea, forțăm scroll-ul fereastrei în caz că e nevoie
+    window.scrollTo(0, 0);
   }, []);
 
   // Golește coșul după confirmarea comenzii
@@ -107,7 +108,11 @@ const OrderConfirmation = () => {
   }, [orderId, email]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-8 p-4">
+    // Adăugăm ref-ul containerului pe div-ul principal
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-gray-50 flex flex-col items-center pt-8 p-4"
+    >
       <div className="bg-white shadow-lg shadow-gray-400 rounded-lg p-8 max-w-lg w-full">
         <div className="flex justify-center mb-4">
           <svg

@@ -22,13 +22,9 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // Forțăm scroll-ul la poziția 0 după montarea componentei, folosind setTimeout
+  // Scroll abrupt la top imediat după montarea componentei
   useEffect(() => {
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-    }, 100);
+    window.scrollTo(0, 0);
   }, []);
 
   // Golește coșul după confirmarea comenzii

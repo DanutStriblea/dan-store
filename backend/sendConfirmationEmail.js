@@ -1,7 +1,5 @@
 // Încarcă variabilele de mediu (doar local, pentru producție Vercel folosește env vars din dashboard)
-// if (process.env.NODE_ENV !== "production") {
-//   require("dotenv").config();
-// }
+require("dotenv").config();
 
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);

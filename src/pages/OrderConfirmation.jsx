@@ -14,12 +14,11 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // State pentru datele comenzii: totalul și lista de produse
+  // State pentru datele comenzii: total și lista de produse
   const [orderTotal, setOrderTotal] = useState(null);
   const [productsOrdered, setProductsOrdered] = useState([]);
 
-  // La montare, folosim datele din location.state dacă sunt disponibile,
-  // altfel le preluăm din localStorage pentru a asigura persistența la refresh
+  // La montare, preluăm datele din location.state sau din localStorage pentru a asigura persistența datelor
   useEffect(() => {
     if (
       location.state &&
@@ -52,40 +51,25 @@ const OrderConfirmation = () => {
     }
   }, [location.state]);
 
-  // Golește coșul și resetează istoricul navigării
+  // Golește coșul – am eliminat resetarea istoricului pentru a evita navigarea continuă
   useEffect(() => {
     clearCart();
-    window.history.replaceState(null, "", window.location.href);
   }, [clearCart]);
 
-  // Previne navigarea înapoi
-  useEffect(() => {
-    const handlePopState = (event) => {
-      event.preventDefault();
-      window.history.pushState(null, "", window.location.href);
-    };
-    window.history.pushState(null, "", window.location.href);
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
-
-  // Ref pentru trimiterea unui singur email
+  // Ref pentru a preveni trimiterea dublă a emailului
   const emailSentRef = useRef(false);
 
-  // Trimite emailul de confirmare – se va executa doar o singură dată dacă avem date complete
+  // Trimite emailul de confirmare, doar dacă avem un orderId, un email și date complete ale comenzii
   useEffect(() => {
     const sendConfirmationEmail = async () => {
+      if (!orderTotal || productsOrdered.length === 0) {
+        console.error("Datele comenzii sunt incomplete:", {
+          orderTotal,
+          productsOrdered,
+        });
+        return;
+      }
       try {
-        if (!orderTotal || productsOrdered.length === 0) {
-          console.error("Datele comenzii sunt incomplete:", {
-            orderTotal,
-            productsOrdered,
-          });
-          return;
-        }
-
         const response = await fetch("/api/send-confirmation-email", {
           method: "POST",
           headers: {

@@ -113,7 +113,7 @@ const OrderConfirmation = () => {
             />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-center text-green-600 mb-6">
+        <h1 className="text-xl font-bold text-center text-green-600 mb-6 md:text-3xl">
           Vă mulțumim pentru comandă!
         </h1>
         <div className="mb-4">

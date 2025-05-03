@@ -1,6 +1,7 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { useContext, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 
 const OrderConfirmation = () => {
@@ -21,64 +22,11 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // State pentru datele comenzii: totalul și lista de produse
-  const [orderTotal, setOrderTotal] = useState(null);
-  const [productsOrdered, setProductsOrdered] = useState([]);
-
-  // La montare, preluăm datele din location.state (dacă există) sau din localStorage
+  // Golește coșul după confirmarea comenzii
   useEffect(() => {
-    if (
-      location.state &&
-      location.state.orderTotal &&
-      location.state.productsOrdered
-    ) {
-      console.log("Preluăm datele din location.state");
-      setOrderTotal(location.state.orderTotal);
-      setProductsOrdered(location.state.productsOrdered);
-      localStorage.setItem("orderTotal", location.state.orderTotal);
-      localStorage.setItem(
-        "productsOrdered",
-        JSON.stringify(location.state.productsOrdered)
-      );
-    } else {
-      console.log("Preluăm datele din localStorage");
-      const storedOrderTotal = localStorage.getItem("orderTotal");
-      const storedProductsOrdered = localStorage.getItem("productsOrdered");
-      if (storedOrderTotal) {
-        setOrderTotal(Number(storedOrderTotal));
-      }
-      if (storedProductsOrdered) {
-        try {
-          const parsedProducts = JSON.parse(storedProductsOrdered);
-          setProductsOrdered(parsedProducts);
-        } catch (error) {
-          console.error(
-            "Eroare la parsarea productsOrdered din localStorage:",
-            error
-          );
-        }
-      }
-    }
-    // Debug: afișăm valorile curente
-    console.log(
-      "orderTotal:",
-      orderTotal,
-      " productsOrdered:",
-      productsOrdered
-    );
-  }, [location.state]);
-
-  // Amânăm clearCart pentru a permite preluarea datelor de comandă
-  useEffect(() => {
-    // Amânăm golirea coșului cu 5 secunde
-    const timer = setTimeout(() => {
-      clearCart();
-      // Opțional: curățăm și localStorage, dacă nu mai este nevoie de datele comenzii
-      // localStorage.removeItem("orderTotal");
-      // localStorage.removeItem("productsOrdered");
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [clearCart]);
+    clearCart();
+    window.history.replaceState(null, "", window.location.href);
+  }, []);
 
   // Previne revenirea pe pagina anterioară
   useEffect(() => {
@@ -86,8 +34,10 @@ const OrderConfirmation = () => {
       event.preventDefault();
       window.history.pushState(null, "", window.location.href);
     };
+
     window.history.pushState(null, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
+
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
@@ -96,17 +46,21 @@ const OrderConfirmation = () => {
   // Folosim un ref pentru a preveni trimiterea dublă a emailului
   const emailSentRef = useRef(false);
 
-  // Trimite emailul de confirmare (doar dacă datele sunt complete)
+  // Trimite emailul de confirmare (DOAR dacă avem orderId și email)
   useEffect(() => {
     const sendConfirmationEmail = async () => {
-      if (!orderTotal || productsOrdered.length === 0) {
-        console.error("Datele comenzii sunt incomplete:", {
-          orderTotal,
-          productsOrdered,
-        });
-        return;
-      }
       try {
+        const orderTotal = location.state?.orderTotal || 0;
+        const productsOrdered = location.state?.productsOrdered || [];
+
+        if (!orderTotal || productsOrdered.length === 0) {
+          console.error("Datele comenzii sunt incomplete:", {
+            orderTotal,
+            productsOrdered,
+          });
+          return;
+        }
+
         const response = await fetch("/api/send-confirmation-email", {
           method: "POST",
           headers: {
@@ -116,9 +70,7 @@ const OrderConfirmation = () => {
             orderId,
             email,
             name: nameFromState || user?.name || "Client Fără Nume",
-            order_number: orderId
-              ? orderId.substring(0, 8)
-              : "Comandă Necunoscută",
+            order_number: orderId?.substring(0, 8) || "Comandă Necunoscută",
             order_total: orderTotal,
             created_at: new Date().toISOString(),
             products_ordered: productsOrdered,
@@ -128,6 +80,7 @@ const OrderConfirmation = () => {
         if (!response.ok) {
           throw new Error("Eroare la trimiterea emailului de confirmare.");
         }
+
         console.log("✅ Email de confirmare trimis cu succes!");
       } catch (error) {
         console.error(
@@ -141,7 +94,7 @@ const OrderConfirmation = () => {
       emailSentRef.current = true;
       sendConfirmationEmail();
     }
-  }, [orderId, email, orderTotal, productsOrdered, nameFromState, user?.name]);
+  }, [orderId, email]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center pt-8 p-4">

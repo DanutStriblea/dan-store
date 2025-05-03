@@ -7,10 +7,10 @@ import FinalPaymentForm from "../components/FinalPaymentForm";
 import OrderSummary from "../components/OrderSummary";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import { supabase } from "../supabaseClient"; // Asigură-te că supabaseClient este corect configurat
-import { v4 as uuidv4 } from "uuid";
+import { supabase } from "../supabaseClient"; // Assuming supabaseClient is correctly configured
+import { v4 as uuidv4 } from "uuid"; // Importăm librăria uuid
 
-// Configurare URL API – folosește un șir gol dacă process nu este definit (apeluri relative)
+// Configurare URL API – dacă process nu este definit, se folosește șir gol (apeluri relative)
 const API_URL =
   (typeof process !== "undefined" && process.env.REACT_APP_API_URL) || "";
 
@@ -60,6 +60,7 @@ const FinalOrderDetails = () => {
   const totalAmount = totalProductCost + deliveryCost;
 
   const handleSubmitOrder = async () => {
+    // Asigurăm un user_id valid din contextul de autentificare
     if (!user?.id) {
       console.error(
         "Utilizatorul nu este autentificat. Nu se poate plasa comanda."
@@ -76,13 +77,13 @@ const FinalOrderDetails = () => {
         Number(cardDetails.exp_year),
         Number(cardDetails.exp_month) - 1
       ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
-      paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira în ${formattedExp}`;
+      paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira in ${formattedExp}`;
     }
 
     const orderDataToInsert = {
       id: uuidv4(),
-      user_id: user.id,
-      email: user.email,
+      user_id: user.id, // Folosim user_id-ul autentificat
+      email: user.email, // Adăugăm emailul utilizatorului
       name: orderData?.deliveryAddress?.name || "Unknown User",
       order_number: orderId.substring(0, 8),
       phone_number: orderData?.deliveryAddress?.phone_number || "Unknown Phone",
@@ -94,7 +95,8 @@ const FinalOrderDetails = () => {
       billing_city: orderData?.billingAddress?.city || "Unknown City",
       billing_address: orderData?.billingAddress?.address || "Unknown Address",
       payment_method: paymentMethodDetails,
-      // Stocăm produsele ca șir JSON pentru inserare în DB, iar ulterior le vom converti.
+      // Stocăm array-ul de produse ca șir JSON pentru inserare în DB,
+      // dar apoi îl vom converta la apelul de email.
       products_ordered: JSON.stringify(
         cartItems.map((item) => ({
           product_id: item.product_id,
@@ -106,7 +108,7 @@ const FinalOrderDetails = () => {
       order_quantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
       delivery_cost: deliveryCost,
       order_total: totalAmount,
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString(), // Adăugăm timestamp-ul comenzii
     };
 
     try {
@@ -121,20 +123,6 @@ const FinalOrderDetails = () => {
       console.error("Eroare la salvarea comenzii:", err.message);
       return;
     }
-
-    // Salvează datele esențiale pentru trimiterea emailului în localStorage
-    localStorage.setItem("orderTotal", totalAmount);
-    localStorage.setItem(
-      "productsOrdered",
-      JSON.stringify(
-        cartItems.map((item) => ({
-          product_id: item.product_id,
-          product_name: item.products?.title || "Unknown",
-          quantity: item.quantity,
-          price: item.product_price,
-        }))
-      )
-    );
 
     if (paymentMethod === "Card" && cardType === "newCard") {
       setShowPaymentForm(true);
@@ -176,7 +164,7 @@ const FinalOrderDetails = () => {
               quantity: item.quantity,
               price: item.product_price,
             })),
-            name: orderData?.deliveryAddress?.name,
+            name: orderData?.deliveryAddress?.name, // Transmiți numele aici
           },
         });
       } catch (err) {
@@ -193,7 +181,7 @@ const FinalOrderDetails = () => {
             quantity: item.quantity,
             price: item.product_price,
           })),
-          name: orderData?.deliveryAddress?.name,
+          name: orderData?.deliveryAddress?.name, // Asigură-te că e inclus aici!
         },
       });
     }

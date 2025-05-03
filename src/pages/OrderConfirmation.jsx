@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useLayoutEffect, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
@@ -22,9 +22,12 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const { clearCart } = useContext(CartContext);
 
-  // Scroll abrupt la top imediat după montarea componentei
-  useEffect(() => {
+  // Scroll abrupt la top (folosind useLayoutEffect)
+  useLayoutEffect(() => {
+    // Dacă containerul scrollabil este fereastra
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, []);
 
   // Golește coșul după confirmarea comenzii
@@ -68,9 +71,7 @@ const OrderConfirmation = () => {
 
         const response = await fetch("/api/send-confirmation-email", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             orderId,
             email,

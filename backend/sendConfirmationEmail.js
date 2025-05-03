@@ -79,7 +79,7 @@ const sendConfirmationEmail = async (order) => {
     );
 
     const response = await resend.emails.send({
-      from: "onboarding@resend.dev", // Pentru test, folosești un sender valid; pe producție folosește unul verificat
+      from: "Acme <onboarding@resend.dev>", // Pentru test, folosești un sender valid; pe producție folosește unul verificat
       to: email,
       subject: `Confirmare comandă - ${order_number}`,
       text: `Bună ${name},

@@ -135,12 +135,12 @@ const UserAddresses = () => {
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Adresele Mele</h2>
-      <div className="mb-4">
+      <div className="mb-4 pr-[50%]">
         {addresses.map((address) => (
           <div
             key={address.id}
             className={`border rounded-lg p-4 mb-4 bg-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300 ${
-              address.is_default ? "bg-gray-300" : ""
+              address.is_default ? "bg-slate-300" : ""
             }`}
           >
             <p>

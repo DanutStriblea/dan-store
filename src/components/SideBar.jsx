@@ -143,7 +143,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
                     />
                     <FaStar
                       className={`w-6 h-6 cursor-pointer transition-transform duration-200 ${
-                        rating >= star ? "text-yellow-500" : "text-gray-600"
+                        rating >= star ? "text-sky-700" : "text-gray-500"
                       }`}
                     />
                   </label>

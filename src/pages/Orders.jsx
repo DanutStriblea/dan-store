@@ -115,7 +115,10 @@ const Orders = () => {
                 {/* Stânga: Detalii comandă */}
                 <div>
                   <h2 className="text-l font-bold text-sky-900">
-                    Comanda Nr. {order.order_number}
+                    Comanda nr.{" "}
+                    <span className="text-slate-400 font-semibold">
+                      {order.order_number}
+                    </span>
                   </h2>
                   <div className="flex items-center text-xs text-gray-500 mt-1">
                     <span>
@@ -161,32 +164,26 @@ const Orders = () => {
             {expandedOrderId === order.id && (
               <div className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  {/* Livrare - Adresa de livrare */}
-                  <div className="bg-gray-50 p-3 rounded-md border">
-                    <h3 className="text-sm font-semibold mb-1">Livrare</h3>
-                    <p className="text-gray-700 text-sm">
-                      {order.delivery_address}
-                    </p>
-                    <p className="text-gray-700 text-sm">
-                      {order.delivery_city}, {order.delivery_county}
+                  {/* Livrare */}
+                  <div className="bg-gray-50 p-2 rounded-md shadow-lg shadow-slate-200">
+                    <h3 className="text-xs font-semibold">Livrare</h3>
+                    <p className="text-gray-700 text-xs">
+                      {order.delivery_address}, {order.delivery_city},{" "}
+                      {order.delivery_county}
                     </p>
                   </div>
-                  {/* Facturare - Adresa de facturare */}
-                  <div className="bg-gray-50 p-3 rounded-md border">
-                    <h3 className="text-sm font-semibold mb-1">Facturare</h3>
-                    <p className="text-gray-700 text-sm">
-                      {order.billing_address}
-                    </p>
-                    <p className="text-gray-700 text-sm">
-                      {order.billing_city}, {order.billing_county}
+                  {/* Facturare */}
+                  <div className="bg-gray-50 p-2 rounded-md shadow-lg shadow-slate-200">
+                    <h3 className="text-xs font-semibold">Facturare</h3>
+                    <p className="text-gray-700 text-xs">
+                      {order.billing_address}, {order.billing_city},{" "}
+                      {order.billing_county}
                     </p>
                   </div>
                   {/* Metoda de plată */}
-                  <div className="bg-gray-50 p-3 rounded-md border">
-                    <h3 className="text-sm font-semibold mb-1">
-                      Metoda de plată
-                    </h3>
-                    <p className="text-gray-700 text-sm">
+                  <div className="bg-gray-50 p-2 rounded-md shadow-lg shadow-slate-200">
+                    <h3 className="text-xs font-semibold">Metoda de plată</h3>
+                    <p className="text-gray-700 text-xs">
                       {order.payment_method}
                     </p>
                   </div>

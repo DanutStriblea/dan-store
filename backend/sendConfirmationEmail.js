@@ -1,6 +1,5 @@
 // Încarcă variabilele de mediu (doar local, pentru producție Vercel folosește env vars din dashboard)
 require("dotenv").config();
-import { resend } from "resend"; // Asigură-te că ai instalat Resend SDK: npm install resend
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -57,16 +56,16 @@ const sendConfirmationEmail = async (order) => {
 
   try {
     console.log("Datele trimise către Resend:", {
-      from: "Acme <onboarding@resend.dev>", // **Notă:** Aici lipsește în log caracterul ">" – în apelul efectiv, folosește: "Acme <onboarding@resend.dev>"
+      from: "Acme <onboarding@resend.dev>", // în apelul efectiv, folosește: "Acme <onboarding@resend.dev>"
       to: email,
-      subject: `Confirmare comandă - ${order_number}`,
+      subject: `Confirmare comandă dan-store - ${order_number}`,
       text: `Bună ${name},\n\nComanda ta cu numărul ${order_number} a fost plasată cu succes pe ${created_at}.\n\nProduse comandate:\n${productListText}\n\nTotal: ${order_total} RON\n\nMulțumim pentru comandă!`,
       html: `<p>Bună ${name},</p><p>Comanda ta cu numărul <strong>${order_number}</strong> a fost plasată cu succes pe ${created_at}.</p><ul>${productListHtml}</ul><p><strong>Total: ${order_total} RON</strong></p><p>Mulțumim pentru comandă!</p>`,
     });
 
     // Apelul efectiv către Resend:
     const response = await resend.emails.send({
-      from: "Acme <onboarding@resend.dev>", // Asigură-te că aici stringul este complet
+      from: "Acme <onboarding@resend.dev>",
       to: email,
       subject: `Confirmare comandă dan-store - ${order_number}`,
       text: `Bună ${name},

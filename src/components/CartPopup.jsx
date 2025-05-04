@@ -8,31 +8,40 @@ const CartPopup = ({ forceVisible }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Folosim location.hash dacă există (hash routing) altfel location.pathname
+  const currentRoute = location.hash ? location.hash : location.pathname;
+
+  // Variabilă care indică dacă popup-ul NU trebuie afișat:
+  const hidePopup =
+    currentRoute.includes("/login") ||
+    currentRoute.includes("/logout") ||
+    currentRoute.includes("/order-confirmation") ||
+    cartItems.length === 0;
+
+  // Toate hook-urile sunt apelate mereu:
   const [visible, setVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const timerRef = useRef(null);
   const prevCartCountRef = useRef(cartItems.length);
 
   useEffect(() => {
-    const shouldHidePopup = location.pathname === "/order-confirmation";
-
-    if (shouldHidePopup) {
-      setShouldRender(false);
-      return;
-    }
-
     if (visible) {
       setShouldRender(true);
     } else {
       const timeout = setTimeout(() => {
         setShouldRender(false);
-      }, 250); // Durata tranziției CSS (300ms)
+      }, 250); // Durata tranziției CSS
       return () => clearTimeout(timeout);
     }
-  }, [visible, location.pathname]);
+  }, [visible]);
 
   useEffect(() => {
-    if (location.pathname === "/cart") {
+    if (
+      currentRoute.includes("/cart") ||
+      currentRoute.includes("/login") ||
+      currentRoute.includes("/logout") ||
+      currentRoute.includes("/order-confirmation")
+    ) {
       setVisible(false);
       return;
     }
@@ -47,7 +56,7 @@ const CartPopup = ({ forceVisible }) => {
       }
       prevCartCountRef.current = cartItems.length;
     }
-  }, [cartItems, location.pathname, forceVisible]);
+  }, [cartItems, currentRoute, forceVisible]);
 
   useEffect(() => {
     if (forceVisible === true) {
@@ -63,12 +72,13 @@ const CartPopup = ({ forceVisible }) => {
     }
   }, [forceVisible]);
 
-  if (!shouldRender) return null;
+  // Înainte de return, dacă condiția hidePopup este adevărată sau nu trebuie renderizat,
+  // nu afișăm popup-ul.
+  if (!shouldRender || hidePopup) return null;
 
   return (
     <div
       onMouseEnter={() => {
-        // La intrarea mouse-ului, se anulează orice timer și se setează visible
         if (timerRef.current) {
           clearTimeout(timerRef.current);
           timerRef.current = null;
@@ -76,7 +86,6 @@ const CartPopup = ({ forceVisible }) => {
         setVisible(true);
       }}
       onMouseLeave={() => {
-        // La ieșirea mouse-ului, se aplică un delay de 1 secundă înainte de a seta visible la false
         if (timerRef.current) {
           clearTimeout(timerRef.current);
           timerRef.current = null;
@@ -88,9 +97,7 @@ const CartPopup = ({ forceVisible }) => {
       }}
       onClick={() => navigate("/cart")}
       className={`fixed top-16 right-8 text-sky-950 bg-sky-50 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-[9000] min-w-[250px] 
-                  transition-opacity duration-300 ${
-                    visible ? "opacity-300" : "opacity-0"
-                  }`}
+                  transition-opacity duration-300 ${visible ? "opacity-300" : "opacity-0"}`}
     >
       <h3 className="text-sm font-semibold mb-2 text-left">Produse în coș</h3>
       <ul className="space-y-2">

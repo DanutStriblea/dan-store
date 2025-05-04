@@ -1,37 +1,34 @@
-import { useState, useEffect } from "react"; // Importăm hook-urile React pentru gestionarea stărilor și efectelor.
-import PropTypes from "prop-types"; // Validăm prop-urile transmise componentei pentru a asigura corectitudinea lor.
-import { supabase } from "../supabaseClient"; // Supabase este utilizat pentru gestionarea autentificării și API-ul backend.
-import { useNavigate } from "react-router-dom"; // Hook pentru redirecționarea utilizatorului între rutele aplicației.
-import RequestResetPassword from "./RequestResetPassword"; // Componente adiționale pentru cererea de resetare a parolei.
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
+import { supabase } from "../supabaseClient";
+import { useNavigate } from "react-router-dom";
+import RequestResetPassword from "./RequestResetPassword";
 
 const ResetPassword = ({
-  fromInternalTrigger = false, // Indică dacă resetarea a fost declanșată din interiorul aplicației.
-  requiresOldPassword = false, // Indică dacă utilizatorul trebuie să introducă parola veche.
+  fromInternalTrigger = false,
+  requiresOldPassword = false,
 }) => {
-  console.log("Componenta ResetPassword a fost încărcată."); // Mesaj pentru debugging, indică faptul că componenta este declanșată.
+  console.log("Componenta ResetPassword a fost încărcată.");
 
-  // 🔹 Stări utilizate pentru gestionarea input-urilor și mesajelor:
-  const [oldPassword, setOldPassword] = useState(""); // Stare pentru parola veche (cerută doar dacă resetarea este internă).
-  const [password, setPassword] = useState(""); // Stare pentru parola nouă introdusă de utilizator.
-  const [confirmPassword, setConfirmPassword] = useState(""); // Stare pentru confirmarea parolei noi.
-  const [error, setError] = useState(""); // Mesaje de eroare afișate utilizatorului (ex: invalid token).
-  const [message, setMessage] = useState(""); // Mesaje de succes afișate utilizatorului (ex: parola resetată).
-  const [isLoading, setIsLoading] = useState(!fromInternalTrigger); // Stare pentru afișarea mesajului de încărcare (doar pentru flux extern).
-  const [showRequestReset, setShowRequestReset] = useState(false); // Controlează afișarea unui formular pentru cererea de resetare.
+  const [oldPassword, setOldPassword] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(!fromInternalTrigger);
+  const [showRequestReset, setShowRequestReset] = useState(false);
 
-  const navigate = useNavigate(); // Hook-ul pentru navigarea între rute (ex: redirecționare la pagina principală).
+  const navigate = useNavigate();
 
-  // 🔹 Efect declanșat la încărcarea componentei:
   useEffect(() => {
     if (fromInternalTrigger) {
-      // Dacă resetarea este internă, componenta se încarcă fără a prelua token-uri din URL.
       setIsLoading(false);
-      return; // Se termină funcția pentru fluxul intern.
+      return;
     }
 
     const extractTokens = async () => {
       try {
-        console.log("URL complet:", window.location.href); // Debugging pentru URL-ul utilizat.
+        console.log("URL complet:", window.location.href);
 
         // 🔹 Detectăm hash-ul complet din URL (formatul include `#/reset-password#access_token`):
         const fullHash = window.location.hash.substring(1); // Eliminăm simbolul `#` din hash.
@@ -43,14 +40,13 @@ const ResetPassword = ({
 
         // 🔹 Preluăm parametrii care includ token-urile:
         const params = new URLSearchParams(hashParts[hashParts.length - 1]); // Folosim ultima parte a hash-ului.
-        const accessToken = params.get("access_token"); // Obținem token-ul de acces din parametrii.
-        const refreshToken = params.get("refresh_token"); // Obținem token-ul de refresh din parametrii.
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
 
-        console.log("Access Token extras:", accessToken); // Debugging pentru verificarea token-ului de acces.
-        console.log("Refresh Token extras:", refreshToken); // Debugging pentru verificarea token-ului de refresh.
+        console.log("Access Token extras:", accessToken);
+        console.log("Refresh Token extras:", refreshToken);
 
         if (!accessToken || !refreshToken) {
-          // Dacă unul dintre token-uri lipsește, afișăm eroarea.
           setError("Token-ul pentru resetare lipsește sau este invalid!");
           setIsLoading(false); // Oprim mesajul de încărcare.
           return;
@@ -58,12 +54,12 @@ const ResetPassword = ({
 
         // 🔹 Setăm sesiunea utilizatorului folosind Supabase:
         const { error } = await supabase.auth.setSession({
-          access_token: accessToken, // Token de acces pentru autentificare.
-          refresh_token: refreshToken, // Token de refresh pentru sesiune.
+          access_token: accessToken,
+          refresh_token: refreshToken,
         });
 
         if (error) {
-          console.error("Eroare la configurarea sesiunii:", error.message); // Debugging pentru erori în setarea sesiunii.
+          console.error("Eroare la configurarea sesiunii:", error.message);
           setError("Token-ul pentru resetare nu este valid sau a expirat!");
         } else {
           console.log("Sesiunea utilizatorului configurată cu succes!"); // Succes în autentificare.
@@ -74,18 +70,18 @@ const ResetPassword = ({
         console.error("Eroare neașteptată:", err.message);
         setError("A apărut o eroare neașteptată!");
       } finally {
-        setIsLoading(false); // Indică faptul că procesul de resetare s-a terminat.
+        setIsLoading(false);
       }
     };
 
-    extractTokens(); // Apelăm funcția pentru extragerea token-urilor.
-  }, [fromInternalTrigger]); // Acest efect rulează doar dacă `fromInternalTrigger` se modifică.
+    extractTokens();
+  }, [fromInternalTrigger]);
 
   // 🔹 Funcția pentru resetarea parolei utilizatorului:
   const handleReset = async (e) => {
-    e.preventDefault(); // Prevenim comportamentul default al formularului.
-    setError(""); // Resetăm mesajele de eroare.
-    setMessage(""); // Resetăm mesajele de succes.
+    e.preventDefault();
+    setError("");
+    setMessage("");
 
     // Validăm dacă parola nouă coincide cu confirmarea:
     if (password !== confirmPassword) {
@@ -131,7 +127,7 @@ const ResetPassword = ({
         // Autentificăm utilizatorul cu parola veche pentru verificare:
         const { error: oldPasswordError } =
           await supabase.auth.signInWithPassword({
-            email: user.email, // Folosim email-ul utilizatorului logat.
+            email: user.email,
             password: oldPassword, // Validăm parola veche.
           });
 
@@ -141,31 +137,27 @@ const ResetPassword = ({
         }
       }
 
-      // 🔹 Actualizăm parola utilizatorului cu cea nouă:
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        throw new Error("A apărut o eroare la resetarea parolei."); // Afișăm eroarea dacă procesul eșuează.
+        throw new Error("A apărut o eroare la resetarea parolei.");
       }
 
-      // 🔹 Afișăm mesajul de succes și navigăm utilizatorul:
       setMessage("Parola a fost resetată cu succes!");
       setTimeout(() => {
-        setMessage(""); // Resetăm mesajul după 4 secunde.
-        navigate("/"); // Redirecționăm utilizatorul la pagina principală.
+        setMessage("");
+        navigate("/");
       }, 4000);
     } catch (err) {
-      console.error("Eroare detectată:", err.message); // Debugging pentru erorile detectate.
-      setError(err.message); // Afișăm eroarea utilizatorului.
+      console.error("Eroare detectată:", err.message);
+      setError(err.message);
     }
   };
 
-  // 🔹 Închidem pop-up-ul și navigăm către pagina principală
   const handleClose = () => {
     navigate("/");
   };
 
-  // 🔹 Interfață de încărcare
   if (isLoading) return <p>Se încarcă...</p>;
 
   return (

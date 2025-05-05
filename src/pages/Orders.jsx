@@ -62,7 +62,7 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  // Funcție de toggle: dacă comanda dată e deja deschisă, o închide (setează null),
+  // Funcție de toggle: dacă comanda dată e deja deschisă, o închide (setează null)
   // altfel setează expandedOrderId la id-ul comenzii respective.
   const toggleOrder = (orderId) => {
     setExpandedOrderId((prevOrderId) =>

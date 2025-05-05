@@ -117,7 +117,7 @@ const Orders = () => {
                   <h2 className="text-l font-bold text-sky-900">
                     Comanda nr.{" "}
                     <span className="text-slate-400 font-semibold">
-                      {order.order_number}
+                      {order.order_number.substring(0, 8)}
                     </span>
                   </h2>
                   <div className="flex items-center text-xs text-gray-500 mt-1">

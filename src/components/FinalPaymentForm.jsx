@@ -30,31 +30,10 @@ const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
   const [saveCard, setSaveCard] = useState(false);
 
   const saveCardInDatabase = async (paymentMethod) => {
-    console.log("PaymentMethod primit:", paymentMethod);
-    if (!paymentMethod) {
-      throw new Error("PaymentMethod invalid primit pentru salvare.");
+    if (!paymentMethod || !paymentMethod.card) {
+      throw new Error("Invalid payment method provided for saving.");
     }
-    if (typeof paymentMethod === "string") {
-      const id = paymentMethod;
-      const { error } = await supabase.from("saved_cards").insert([
-        {
-          card_id: id,
-          card_brand: null,
-          card_last4: null,
-          exp_month: null,
-          exp_year: null,
-        },
-      ]);
-      if (error) {
-        console.error("Eroare la salvarea cardului în DB:", error.message);
-      } else {
-        console.log("Card salvat cu succes în DB!", id);
-      }
-      return;
-    }
-    if (!paymentMethod.card) {
-      throw new Error("PaymentMethod invalid primit pentru salvare.");
-    }
+
     const { id, card } = paymentMethod;
     const { error } = await supabase.from("saved_cards").insert([
       {
@@ -63,17 +42,23 @@ const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
         card_last4: card.last4,
         exp_month: card.exp_month,
         exp_year: card.exp_year,
+        name_on_card: cardholderName, // Include the name on card
       },
     ]);
+
     if (error) {
-      console.error("Eroare la salvarea cardului în DB:", error.message);
+      console.error("Error saving card to database:", error.message);
     } else {
-      console.log("Card salvat cu succes în DB!");
+      console.log("Card successfully saved to database!");
     }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!cardholderName.trim()) {
+      setErrorMessage("Numele deținătorului cardului este obligatoriu.");
+      return;
+    }
     if (!acceptedTerms) {
       setErrorMessage("Vă rugăm să acceptați termenii și condițiile.");
       return;

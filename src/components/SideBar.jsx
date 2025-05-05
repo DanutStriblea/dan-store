@@ -118,8 +118,8 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
                 className="w-full accent-sky-600"
               />
               <div className="flex justify-between text-xs mt-1">
-                <span>1 RON</span>
-                <span>{maxPrice} RON</span>
+                <span>{maxPrice}</span>
+                <span>Max</span>
               </div>
             </li>
             <li>

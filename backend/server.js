@@ -24,7 +24,7 @@ app.post("/api/create-payment-intent", async (req, res) => {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount, // suma, de exemplu, 12500 pentru 125.00 RON
+      amount, // de exemplu, 12500 pentru 125.00 RON
       currency: "ron",
       metadata: { orderId },
     });
@@ -41,7 +41,7 @@ app.post("/api/create-setup-intent", async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Opțional: pune aici logica pentru atașarea sau crearea unui customer în Stripe
+    // Opțional: se poate atașa sau crea un customer în Stripe aici
     const setupIntent = await stripe.setupIntents.create({
       usage: "off_session",
     });
@@ -68,10 +68,10 @@ app.post("/api/retrieve-payment-method", async (req, res) => {
   }
 });
 
-// Endpoint nou pentru trimiterea emailului de confirmare a comenzii
+// Endpoint pentru trimiterea emailului de confirmare a comenzii
 app.post("/api/send-confirmation-email", async (req, res) => {
   try {
-    // Se așteaptă un obiect "order" în corpul request-ului
+    // Se așteaptă un obiect "order" în corpul cererii
     const order = req.body;
     console.log("Date primite pentru trimiterea emailului:", order);
     const response = await sendConfirmationEmail(order);
@@ -82,6 +82,64 @@ app.post("/api/send-confirmation-email", async (req, res) => {
     res
       .status(500)
       .json({ error: "Eroare la trimiterea emailului de confirmare." });
+  }
+});
+
+// Endpoint pentru procesarea plății cu cardul salvat
+app.post("/api/create-payment-intent-saved", async (req, res) => {
+  const { amount, orderId, paymentMethodId, customerId } = req.body;
+
+  if (!amount || !orderId || !paymentMethodId || !customerId) {
+    return res.status(400).json({
+      error: "Missing amount, orderId, paymentMethodId, or customerId",
+    });
+  }
+
+  // Înainte de a crea PaymentIntent, se încearcă atașarea PaymentMethod-ului la client
+  try {
+    await stripe.paymentMethods.attach(paymentMethodId, {
+      customer: customerId,
+    });
+  } catch (error) {
+    // Dacă PaymentMethod-ul este deja atașat, se poate ignora eroarea
+    if (
+      error.code !== "resource_already_exists" &&
+      !error.message.includes("already attached")
+    ) {
+      console.error("Error attaching PaymentMethod:", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount, // suma în subunități (de exemplu, centime)
+      currency: "ron",
+      payment_method: paymentMethodId,
+      customer: customerId,
+      confirm: true,
+      off_session: true,
+    });
+
+    return res.status(200).json({ paymentIntent });
+  } catch (err) {
+    console.error("Error creating PaymentIntent with saved card:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint pentru crearea unui client în Stripe
+app.post("/api/create-customer", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+  try {
+    const customer = await stripe.customers.create({ email });
+    return res.status(200).json({ customerId: customer.id });
+  } catch (err) {
+    console.error("Error creating customer:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 

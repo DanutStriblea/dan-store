@@ -7,12 +7,14 @@ import FinalPaymentForm from "../components/FinalPaymentForm";
 import OrderSummary from "../components/OrderSummary";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
-import { supabase } from "../supabaseClient"; // Assuming supabaseClient is correctly configured
-import { v4 as uuidv4 } from "uuid"; // Importăm librăria uuid
+import { supabase } from "../supabaseClient";
+import { v4 as uuidv4 } from "uuid";
 
-// Configurare URL API – dacă process nu este definit, se folosește șir gol (apeluri relative)
+// Configurare URL API – se folosește "http://localhost:4242" dacă variabila nu este setată
 const API_URL =
-  (typeof process !== "undefined" && process.env.REACT_APP_API_URL) || "";
+  (typeof process !== "undefined" && process.env.REACT_APP_API_URL) ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:4242";
 
 const formatAddress = (addressObj) => {
   if (!addressObj) return "N/A";
@@ -29,7 +31,7 @@ const FinalOrderDetails = () => {
   const navigate = useNavigate();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
 
-  // Extragem datele din location.state
+  // Extragem datele din location.state transmise din OrderDetails.jsx
   const { orderId, orderData, paymentMethod, cardType, paymentSummary } =
     location.state || {};
 
@@ -60,7 +62,7 @@ const FinalOrderDetails = () => {
   const totalAmount = totalProductCost + deliveryCost;
 
   const handleSubmitOrder = async () => {
-    // Asigurăm un user_id valid din contextul de autentificare
+    // Verificăm că utilizatorul este autentificat
     if (!user?.id) {
       console.error(
         "Utilizatorul nu este autentificat. Nu se poate plasa comanda."
@@ -68,24 +70,27 @@ const FinalOrderDetails = () => {
       return;
     }
 
+    // Construim detaliile plății, folosind datele cardului salvat dacă există
     const storedCardDetailsString = localStorage.getItem("savedCardDetails");
     let paymentMethodDetails = paymentMethod;
-
     if (paymentMethod === "Card" && storedCardDetailsString) {
       const cardDetails = JSON.parse(storedCardDetailsString);
       const formattedExp = new Date(
         Number(cardDetails.exp_year),
         Number(cardDetails.exp_month) - 1
       ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
-      paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira in ${formattedExp}`;
+      paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira în ${formattedExp}`;
     }
+
+    // Generăm un număr de comandă unic folosind o componentă din orderId și timestamp-ul actual
+    const orderNumber = orderId.substring(0, 8) + "-" + Date.now();
 
     const orderDataToInsert = {
       id: uuidv4(),
-      user_id: user.id, // Folosim user_id-ul autentificat
-      email: user.email, // Adăugăm emailul utilizatorului
+      user_id: user.id,
+      email: user.email,
       name: orderData?.deliveryAddress?.name || "Unknown User",
-      order_number: orderId.substring(0, 8),
+      order_number: orderNumber,
       phone_number: orderData?.deliveryAddress?.phone_number || "Unknown Phone",
       delivery_county: orderData?.deliveryAddress?.county || "Unknown County",
       delivery_city: orderData?.deliveryAddress?.city || "Unknown City",
@@ -95,8 +100,6 @@ const FinalOrderDetails = () => {
       billing_city: orderData?.billingAddress?.city || "Unknown City",
       billing_address: orderData?.billingAddress?.address || "Unknown Address",
       payment_method: paymentMethodDetails,
-      // Stocăm array-ul de produse ca șir JSON pentru inserare în DB,
-      // dar apoi îl vom converta la apelul de email.
       products_ordered: JSON.stringify(
         cartItems.map((item) => ({
           product_id: item.product_id,
@@ -108,13 +111,14 @@ const FinalOrderDetails = () => {
       order_quantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
       delivery_cost: deliveryCost,
       order_total: totalAmount,
-      created_at: new Date().toISOString(), // Adăugăm timestamp-ul comenzii
+      created_at: new Date().toISOString(),
     };
 
+    // Upsert în tabelul submitted_orders din Supabase
     try {
       const { error } = await supabase
         .from("submitted_orders")
-        .insert(orderDataToInsert);
+        .upsert(orderDataToInsert);
       if (error) {
         throw new Error(`Eroare la salvarea comenzii: ${error.message}`);
       }
@@ -124,17 +128,44 @@ const FinalOrderDetails = () => {
       return;
     }
 
+    // Tratarea cazurilor de plată
     if (paymentMethod === "Card" && cardType === "newCard") {
+      // Pentru plata cu un card nou, afișăm formularul Stripe
       setShowPaymentForm(true);
-    } else if (paymentMethod === "Card" && cardType === "savedCard") {
+    } else if (paymentMethod === "Card" && cardType !== "newCard") {
+      // Pentru plata cu cardul salvat, avem nevoie de un Stripe Customer valid.
+      let customerId = user?.stripeCustomerId;
+      if (!customerId) {
+        // Dacă nu există, apelăm endpoint-ul pentru a crea un client Stripe
+        try {
+          const createCustomerResponse = await fetch(
+            `${API_URL}/api/create-customer`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: user.email }),
+            }
+          );
+          const createCustomerData = await createCustomerResponse.json();
+          if (!createCustomerResponse.ok || !createCustomerData.customerId) {
+            throw new Error(
+              createCustomerData.error || "Eroare la crearea clientului Stripe."
+            );
+          }
+          customerId = createCustomerData.customerId;
+          // Aici poți actualiza și contextul utilizatorului în Supabase cu noul customerId dacă este necesar
+        } catch (error) {
+          console.error("Eroare la crearea clientului Stripe:", error.message);
+          return;
+        }
+      }
+      // Continuăm cu plata folosind cardul salvat
       try {
-        const selectedSavedCard = orderData.card_encrypted_data;
+        const selectedSavedCard = cardType; // cardType conține id-ul cardului salvat
         if (!selectedSavedCard) {
           throw new Error("Nu a fost selectat niciun card salvat.");
         }
         const convertedAmount = Math.round(totalAmount * 100);
-        const customerId =
-          user && user.stripeCustomerId ? user.stripeCustomerId : "cus_test123";
         const response = await fetch(
           `${API_URL}/api/create-payment-intent-saved`,
           {
@@ -164,13 +195,14 @@ const FinalOrderDetails = () => {
               quantity: item.quantity,
               price: item.product_price,
             })),
-            name: orderData?.deliveryAddress?.name, // Transmiți numele aici
+            name: orderData?.deliveryAddress?.name,
           },
         });
       } catch (err) {
         console.error("Eroare la procesarea plății:", err.message);
       }
     } else if (paymentMethod === "Ramburs") {
+      // Pentru plata ramburs, navigăm către pagina de confirmare
       console.log("Procesăm comanda Ramburs pentru orderId:", orderId);
       navigate(`/order-confirmation?orderId=${orderId}`, {
         state: {
@@ -181,7 +213,7 @@ const FinalOrderDetails = () => {
             quantity: item.quantity,
             price: item.product_price,
           })),
-          name: orderData?.deliveryAddress?.name, // Asigură-te că e inclus aici!
+          name: orderData?.deliveryAddress?.name,
         },
       });
     }

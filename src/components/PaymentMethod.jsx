@@ -30,12 +30,9 @@ const PaymentMethod = ({ orderId }) => {
       } else {
         setSavedCards(data);
         if (data.length > 0) {
-          // Folosim updater-ul funcțional pentru selectedCard:
-          setSelectedCard((prevSelectedCard) =>
-            prevSelectedCard === "savedCard"
-              ? data[0].card_id
-              : prevSelectedCard
-          );
+          setSelectedCard(data[0].card_id); // Selectăm primul card din listă by default
+        } else {
+          setSelectedCard("newCard"); // Selectăm "Plătește cu alt card" by default
         }
       }
     };
@@ -55,7 +52,6 @@ const PaymentMethod = ({ orderId }) => {
     localStorage.setItem("savedCardDetails", JSON.stringify(card));
   };
 
-  // Efect pentru actualizarea order_details – actualizăm doar datele relevante.
   // Efect pentru actualizarea order_details – actualizăm doar datele relevante.
   useEffect(() => {
     const updatePaymentData = async () => {

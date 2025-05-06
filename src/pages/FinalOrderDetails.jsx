@@ -74,12 +74,32 @@ const FinalOrderDetails = () => {
     const storedCardDetailsString = localStorage.getItem("savedCardDetails");
     let paymentMethodDetails = paymentMethod;
     if (paymentMethod === "Card" && storedCardDetailsString) {
-      const cardDetails = JSON.parse(storedCardDetailsString);
-      const formattedExp = new Date(
-        Number(cardDetails.exp_year),
-        Number(cardDetails.exp_month) - 1
-      ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
-      paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira în ${formattedExp}`;
+      try {
+        const cardDetails = JSON.parse(storedCardDetailsString);
+        if (
+          cardDetails &&
+          cardDetails.brand &&
+          cardDetails.last4 &&
+          cardDetails.exp_month &&
+          cardDetails.exp_year
+        ) {
+          const formattedExp = new Date(
+            Number(cardDetails.exp_year),
+            Number(cardDetails.exp_month) - 1
+          ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
+          paymentMethodDetails = `${cardDetails.brand} •••• ${cardDetails.last4} Expira în ${formattedExp}`;
+        } else {
+          console.error(
+            "Card details are incomplete or missing required fields:",
+            cardDetails
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Error parsing savedCardDetails from localStorage:",
+          error
+        );
+      }
     }
 
     // Generăm un număr de comandă unic folosind o componentă din orderId și timestamp-ul actual

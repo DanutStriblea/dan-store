@@ -48,6 +48,10 @@ const PaymentMethod = ({ orderId }) => {
 
   // Când se selectează un card salvat, salvăm și detaliile complete ale acestuia în localStorage.
   const handleCardSelect = (card) => {
+    if (!card || !card.card_id || !card.card_brand || !card.card_last4) {
+      console.error("Invalid card details provided:", card);
+      return;
+    }
     setSelectedCard(card.card_id);
     localStorage.setItem("savedCardDetails", JSON.stringify(card));
   };

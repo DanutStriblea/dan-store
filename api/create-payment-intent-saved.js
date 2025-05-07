@@ -24,10 +24,11 @@ export default async function handler(req, res) {
       customer: customerId,
     });
   } catch (error) {
-    // Ignore the error if the PaymentMethod is already attached
+    // Enhance error handling to ensure reattachment errors are ignored
     if (
       error.code !== "resource_already_exists" &&
-      !error.message.includes("already attached")
+      !error.message.includes("already attached") &&
+      !error.message.includes("has already been attached")
     ) {
       console.error("Error attaching PaymentMethod:", error.message);
       return res.status(500).json({ error: error.message });

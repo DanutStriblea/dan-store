@@ -78,8 +78,8 @@ const FinalOrderDetails = () => {
         const cardDetails = JSON.parse(storedCardDetailsString);
         if (
           cardDetails &&
-          cardDetails.brand &&
-          cardDetails.last4 &&
+          cardDetails.card_brand &&
+          cardDetails.card_last4 &&
           cardDetails.exp_month &&
           cardDetails.exp_year
         ) {
@@ -87,7 +87,7 @@ const FinalOrderDetails = () => {
             Number(cardDetails.exp_year),
             Number(cardDetails.exp_month) - 1
           ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
-          paymentMethodDetails = `${cardDetails.brand} •••• ${cardDetails.last4} Expira în ${formattedExp}`;
+          paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira în ${formattedExp}`;
         } else {
           console.error(
             "Card details are incomplete or missing required fields:",
@@ -243,6 +243,22 @@ const FinalOrderDetails = () => {
     navigate("/order-details", { state: { section } });
   };
 
+  const handleCardSaved = () => {
+    console.log("Card salvat, actualizăm datele din localStorage...");
+    const updatedCardDetails = localStorage.getItem("savedCardDetails");
+    if (updatedCardDetails) {
+      try {
+        const parsedDetails = JSON.parse(updatedCardDetails);
+        console.log("Detalii card actualizate:", parsedDetails);
+      } catch (error) {
+        console.error(
+          "Eroare la parsarea detaliilor cardului din localStorage:",
+          error
+        );
+      }
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto bg-blue-100 p-6">
       <h1 className="text-2xl text-sky-900 font-bold mb-6">Rezumat Comandă</h1>
@@ -336,6 +352,7 @@ const FinalOrderDetails = () => {
                 amount={totalAmount}
                 orderData={orderData}
                 onClose={() => setShowPaymentForm(false)}
+                onCardSaved={handleCardSaved} // Adăugăm callback-ul aici
               />
             </Elements>
           </div>

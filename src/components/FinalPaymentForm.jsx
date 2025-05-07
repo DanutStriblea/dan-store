@@ -16,7 +16,13 @@ import { CartContext } from "../context/CartContext"; // Importăm contextul co�
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 // Adăugăm 'orderData' în props, pentru a putea extrage datele de livrare
-const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
+const FinalPaymentForm = ({
+  orderId,
+  amount,
+  orderData,
+  onClose,
+  onCardSaved,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
@@ -35,6 +41,10 @@ const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
     }
 
     const { id, card } = paymentMethod;
+    if (!card.brand || !card.last4 || !card.exp_month || !card.exp_year) {
+      throw new Error("Incomplete card details. All fields are required.");
+    }
+
     const { error } = await supabase.from("saved_cards").insert([
       {
         card_id: id,
@@ -42,7 +52,7 @@ const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
         card_last4: card.last4,
         exp_month: card.exp_month,
         exp_year: card.exp_year,
-        name_on_card: cardholderName, // Include the name on card
+        name_on_card: cardholderName,
       },
     ]);
 
@@ -50,6 +60,10 @@ const FinalPaymentForm = ({ orderId, amount, orderData, onClose }) => {
       console.error("Error saving card to database:", error.message);
     } else {
       console.log("Card successfully saved to database!");
+      // Notificăm componenta părinte că un card a fost salvat
+      if (typeof onCardSaved === "function") {
+        onCardSaved();
+      }
     }
   };
 
@@ -292,6 +306,7 @@ FinalPaymentForm.propTypes = {
   orderId: PropTypes.string.isRequired,
   amount: PropTypes.number.isRequired,
   onClose: PropTypes.func.isRequired,
+  onCardSaved: PropTypes.func,
 };
 
 FinalPaymentForm.propTypes = {
@@ -304,5 +319,6 @@ FinalPaymentForm.propTypes = {
     }),
   }).isRequired,
   onClose: PropTypes.func,
+  onCardSaved: PropTypes.func,
 };
 export default FinalPaymentForm;

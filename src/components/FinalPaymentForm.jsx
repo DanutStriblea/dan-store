@@ -10,12 +10,11 @@ import {
 import PropTypes from "prop-types";
 import { supabase } from "../supabaseClient";
 import { AuthContext } from "../context/AuthContext";
-import { CartContext } from "../context/CartContext"; // Importăm contextul coșului
+import { CartContext } from "../context/CartContext";
 
 // Folosim import.meta.env pentru variabilele de mediu în Vite
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-// Adăugăm 'orderData' în props, pentru a putea extrage datele de livrare
 const FinalPaymentForm = ({
   orderId,
   amount,
@@ -27,24 +26,31 @@ const FinalPaymentForm = ({
   const elements = useElements();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const { cartItems } = useContext(CartContext); // Preluăm produsele din coș
+  const { cartItems } = useContext(CartContext);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [cardholderName, setCardholderName] = useState(""); // Poți păstra această stare dacă o mai folosești în alte părți
+  const [cardholderName, setCardholderName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
 
+  /* Funcția saveCardInDatabase:
+     - Inserează full card-ul în tabela saved_cards.
+     - Actualizează localStorage cu noile detalii ale cardului.
+     - Calculează stringul de plată dorit.
+     - Updatează recordul din submitted_orders (folosind orderId) pentru a seta coloana payment_method
+       la noul string obținut. 
+  */
   const saveCardInDatabase = async (paymentMethod) => {
     if (!paymentMethod || !paymentMethod.card) {
       throw new Error("Invalid payment method provided for saving.");
     }
-
     const { id, card } = paymentMethod;
     if (!card.brand || !card.last4 || !card.exp_month || !card.exp_year) {
       throw new Error("Incomplete card details. All fields are required.");
     }
 
+    // Inserăm cardul în tabela saved_cards
     const { error } = await supabase.from("saved_cards").insert([
       {
         card_id: id,
@@ -60,6 +66,43 @@ const FinalPaymentForm = ({
       console.error("Error saving card to database:", error.message);
     } else {
       console.log("Card successfully saved to database!");
+
+      // Actualizez localStorage cu noile detalii ale cardului
+      localStorage.setItem("selectedCard", id);
+      localStorage.setItem(
+        "savedCardDetails",
+        JSON.stringify({
+          card_brand: card.brand,
+          card_last4: card.last4,
+          exp_month: card.exp_month,
+          exp_year: card.exp_year,
+        })
+      );
+
+      // Calculez stringul de plată dorit (ex.: "mastercard •••• 4444 Expira în aprilie 2044")
+      const formattedExp = new Date(
+        Number(card.exp_year),
+        Number(card.exp_month) - 1
+      ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
+      const newPaymentMethodString = `${card.brand} •••• ${card.last4} Expira în ${formattedExp}`;
+
+      // Update în tabelul submitted_orders pentru recordul cu id-ul orderId
+      const { error: updateError } = await supabase
+        .from("submitted_orders")
+        .update({ payment_method: newPaymentMethodString })
+        .eq("id", orderId);
+
+      if (updateError) {
+        console.error(
+          "Error updating submitted_orders with new payment method:",
+          updateError.message
+        );
+      } else {
+        console.log(
+          "submitted_orders updated successfully with new payment method."
+        );
+      }
+
       // Notificăm componenta părinte că un card a fost salvat
       if (typeof onCardSaved === "function") {
         onCardSaved();
@@ -175,7 +218,6 @@ const FinalPaymentForm = ({
             quantity: item.quantity,
             price: item.product_price,
           })),
-          // Folosim numele din adresa de livrare, obținut din orderData
           name: orderData?.deliveryAddress?.name,
         },
       });
@@ -305,20 +347,14 @@ const FinalPaymentForm = ({
 FinalPaymentForm.propTypes = {
   orderId: PropTypes.string.isRequired,
   amount: PropTypes.number.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onCardSaved: PropTypes.func,
-};
-
-FinalPaymentForm.propTypes = {
-  orderId: PropTypes.string.isRequired,
-  amount: PropTypes.number.isRequired,
   orderData: PropTypes.shape({
     deliveryAddress: PropTypes.shape({
       name: PropTypes.string,
-      // poți adăuga și alte câmpuri după necesitate
+      // se pot adăuga și alte câmpuri după necesitate
     }),
   }).isRequired,
   onClose: PropTypes.func,
   onCardSaved: PropTypes.func,
 };
+
 export default FinalPaymentForm;

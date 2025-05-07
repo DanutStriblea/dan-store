@@ -8,7 +8,6 @@ import OrderSummary from "../components/OrderSummary";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import { supabase } from "../supabaseClient";
-import { v4 as uuidv4 } from "uuid";
 
 // Configurare URL API – se folosește "http://localhost:4242" dacă variabila nu este setată
 const API_URL =
@@ -70,43 +69,50 @@ const FinalOrderDetails = () => {
       return;
     }
 
-    // Construim detaliile plății, folosind datele cardului salvat dacă există
-    const storedCardDetailsString = localStorage.getItem("savedCardDetails");
+    // Calculăm detaliile plății pentru inserted order.
+    // MODIFICARE: Pentru cazurile în care se folosește un card nou, setăm placeholder-ul "newCard"
+    // astfel încât să știm că detaliile finale vor fi actualizate din FinalPaymentForm.
     let paymentMethodDetails = paymentMethod;
-    if (paymentMethod === "Card" && storedCardDetailsString) {
-      try {
-        const cardDetails = JSON.parse(storedCardDetailsString);
-        if (
-          cardDetails &&
-          cardDetails.card_brand &&
-          cardDetails.card_last4 &&
-          cardDetails.exp_month &&
-          cardDetails.exp_year
-        ) {
-          const formattedExp = new Date(
-            Number(cardDetails.exp_year),
-            Number(cardDetails.exp_month) - 1
-          ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
-          paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira în ${formattedExp}`;
-        } else {
-          console.error(
-            "Card details are incomplete or missing required fields:",
-            cardDetails
-          );
+    if (paymentMethod === "Card") {
+      if (cardType === "newCard") {
+        // Nu preluăm din localStorage, folosim un placeholder
+        paymentMethodDetails = "newCard";
+      } else {
+        // Pentru cardurile salvate, folosim detaliile din localStorage
+        const storedCardDetailsString =
+          localStorage.getItem("savedCardDetails");
+        if (storedCardDetailsString) {
+          try {
+            const cardDetails = JSON.parse(storedCardDetailsString);
+            if (
+              cardDetails &&
+              cardDetails.card_brand &&
+              cardDetails.card_last4 &&
+              cardDetails.exp_month &&
+              cardDetails.exp_year
+            ) {
+              const formattedExp = new Date(
+                Number(cardDetails.exp_year),
+                Number(cardDetails.exp_month) - 1
+              ).toLocaleString("ro-RO", { month: "long", year: "numeric" });
+              paymentMethodDetails = `${cardDetails.card_brand} •••• ${cardDetails.card_last4} Expira în ${formattedExp}`;
+            }
+          } catch (error) {
+            console.error(
+              "Error parsing savedCardDetails from localStorage:",
+              error
+            );
+          }
         }
-      } catch (error) {
-        console.error(
-          "Error parsing savedCardDetails from localStorage:",
-          error
-        );
       }
     }
 
-    // Generăm un număr de comandă unic folosind o componentă din orderId și timestamp-ul actual
+    // Generăm un număr de comandă unic folosind o parte din orderId și timestamp-ul actual
     const orderNumber = orderId.substring(0, 8) + "-" + Date.now();
 
+    // MODIFICARE: Folosim orderId existent (din state) pentru a păstra consistența recordului
     const orderDataToInsert = {
-      id: uuidv4(),
+      id: orderId, // Folosim orderId din state
       user_id: user.id,
       email: user.email,
       name: orderData?.deliveryAddress?.name || "Unknown User",
@@ -119,7 +125,7 @@ const FinalOrderDetails = () => {
       billing_county: orderData?.billingAddress?.county || "Unknown County",
       billing_city: orderData?.billingAddress?.city || "Unknown City",
       billing_address: orderData?.billingAddress?.address || "Unknown Address",
-      payment_method: paymentMethodDetails,
+      payment_method: paymentMethodDetails, // În cazul cardType "newCard", va fi "newCard"
       products_ordered: JSON.stringify(
         cartItems.map((item) => ({
           product_id: item.product_id,
@@ -134,7 +140,7 @@ const FinalOrderDetails = () => {
       created_at: new Date().toISOString(),
     };
 
-    // Upsert în tabelul submitted_orders din Supabase
+    // Upsert în tabelul submitted_orders, folosind orderId existent
     try {
       const { error } = await supabase
         .from("submitted_orders")
@@ -153,10 +159,9 @@ const FinalOrderDetails = () => {
       // Pentru plata cu un card nou, afișăm formularul Stripe
       setShowPaymentForm(true);
     } else if (paymentMethod === "Card" && cardType !== "newCard") {
-      // Pentru plata cu cardul salvat, avem nevoie de un Stripe Customer valid.
+      // Pentru plata cu cardul salvat, procesăm plata direct
       let customerId = user?.stripeCustomerId;
       if (!customerId) {
-        // Dacă nu există, apelăm endpoint-ul pentru a crea un client Stripe
         try {
           const createCustomerResponse = await fetch(
             `${API_URL}/api/create-customer`,
@@ -173,13 +178,11 @@ const FinalOrderDetails = () => {
             );
           }
           customerId = createCustomerData.customerId;
-          // Aici poți actualiza și contextul utilizatorului în Supabase cu noul customerId dacă este necesar
         } catch (error) {
           console.error("Eroare la crearea clientului Stripe:", error.message);
           return;
         }
       }
-      // Continuăm cu plata folosind cardul salvat
       try {
         const selectedSavedCard = cardType; // cardType conține id-ul cardului salvat
         if (!selectedSavedCard) {
@@ -222,7 +225,6 @@ const FinalOrderDetails = () => {
         console.error("Eroare la procesarea plății:", err.message);
       }
     } else if (paymentMethod === "Ramburs") {
-      // Pentru plata ramburs, navigăm către pagina de confirmare
       console.log("Procesăm comanda Ramburs pentru orderId:", orderId);
       navigate(`/order-confirmation?orderId=${orderId}`, {
         state: {
@@ -262,7 +264,6 @@ const FinalOrderDetails = () => {
   return (
     <div className="max-w-3xl mx-auto bg-blue-100 p-6">
       <h1 className="text-2xl text-sky-900 font-bold mb-6">Rezumat Comandă</h1>
-
       {/* Grid cu 3 carduri: Adresa livrare, Adresa facturare și Metoda plată */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Adresa livrare */}
@@ -280,7 +281,6 @@ const FinalOrderDetails = () => {
             Modifică
           </button>
         </div>
-
         {/* Adresa facturare */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -296,7 +296,6 @@ const FinalOrderDetails = () => {
             Modifică
           </button>
         </div>
-
         {/* Metoda plată */}
         <div className="p-4 border rounded-md bg-gray-100 shadow-md flex flex-col justify-between">
           <div>
@@ -317,7 +316,6 @@ const FinalOrderDetails = () => {
           </button>
         </div>
       </div>
-
       {/* Cardul full-width cu sumarul comenzii */}
       <div className="mb-6">
         <OrderSummary
@@ -327,7 +325,6 @@ const FinalOrderDetails = () => {
           titleClass="text-l font-semibold mb-2"
         />
       </div>
-
       {/* Butonul "Trimite Comandă" */}
       <div className="flex justify-center mt-4">
         <button
@@ -337,7 +334,6 @@ const FinalOrderDetails = () => {
           Trimite Comandă
         </button>
       </div>
-
       {/* Formularul Stripe pentru carduri noi (afișat doar dacă s-a ales "newCard") */}
       {showPaymentForm &&
         paymentMethod === "Card" &&
@@ -352,7 +348,7 @@ const FinalOrderDetails = () => {
                 amount={totalAmount}
                 orderData={orderData}
                 onClose={() => setShowPaymentForm(false)}
-                onCardSaved={handleCardSaved} // Adăugăm callback-ul aici
+                onCardSaved={handleCardSaved} // Callback pentru actualizarea datelor cardului
               />
             </Elements>
           </div>

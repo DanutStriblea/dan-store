@@ -19,12 +19,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Attach the PaymentMethod to the Customer if not already attached
-    await stripe.paymentMethods.attach(paymentMethodId, {
-      customer: customerId,
-    });
+    // Add a check to skip attaching the payment method if it is already attached
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+    if (paymentMethod.customer && paymentMethod.customer === customerId) {
+      console.log(
+        "Payment method is already attached to the customer. Skipping attachment."
+      );
+    } else {
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
+    }
   } catch (error) {
-    // Enhance error handling to ensure reattachment errors are ignored
     if (
       error.code !== "resource_already_exists" &&
       !error.message.includes("already attached") &&

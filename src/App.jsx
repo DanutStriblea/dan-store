@@ -27,6 +27,7 @@ import OrderConfirmation from "./pages/OrderConfirmation"; // Ruta pentru confir
 import { AddressProvider } from "./context/AddressContext";
 import CartPopup from "./components/CartPopup"; // <-- Am adăugat această linie
 import Orders from "./pages/Orders";
+import RequestResetPassword from "./components/RequestResetPassword"; // Importă componenta pentru gestionarea hash-ului
 
 function App() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,6 +101,11 @@ function App() {
                         element={<ProtectedRoute element={<Orders />} />}
                       />
                       <Route path="*" element={<NotFound />} />
+                      {/* Ruta pentru gestionarea hash-ului primit de la Supabase */}
+                      <Route
+                        path="user/:token"
+                        element={<RequestResetPassword />}
+                      />
                     </Route>
                   </Routes>
                   <CartPopup /> {/* Adaugă aici componenta de popup */}

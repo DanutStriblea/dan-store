@@ -34,8 +34,7 @@ const RequestResetPassword = ({ onClose }) => {
     try {
       // 🔹 Cerere către API-ul Supabase pentru trimiterea link-ului de resetare
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo:
-          "https://danutstriblea.github.io/dan-store/#/reset-password", // URL-ul unde utilizatorul va fi redirecționat după resetare
+        redirectTo: "https://dan-store-lyart.vercel.app/#/reset-password", // URL-ul unde utilizatorul va fi redirecționat după resetare
       });
 
       if (error) {

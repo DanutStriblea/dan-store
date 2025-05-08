@@ -10,7 +10,7 @@ const RequestResetPassword = ({ onClose }) => {
 
   // 🔹 Auto-închiderea pop-up-ului dacă un mesaj de succes este afișat
   useEffect(() => {
-    if (message) {
+    if (message && onClose) {
       const timeout = setTimeout(() => {
         onClose(); // Închidem pop-up-ul automat după 4 secunde
       }, 4000);
@@ -93,7 +93,7 @@ const RequestResetPassword = ({ onClose }) => {
 
 RequestResetPassword.propTypes = {
   // 🔹 Prop pentru gestionarea funcției de închidere
-  onClose: PropTypes.func.isRequired, // Specificăm că `onClose` este necesar și trebuie să fie o funcție
+  onClose: PropTypes.func, // Facem `onClose` opțional
 };
 
 export default RequestResetPassword;

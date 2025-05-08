@@ -39,7 +39,7 @@ const RequestResetPassword = ({ onClose }) => {
 
       if (error) {
         console.error("Eroare din Supabase:", error.message); // Afișăm eroarea pentru debugging
-        setError("A apărut o eroare. Te rugăm să verifici adresa de email."); // Afișăm mesaj de eroare utilizatorului
+        setError("A apărut o eroare. Te rugăm sa reincerci dupa 15 secunde."); // Afișăm mesaj de eroare utilizatorului
       } else {
         setMessage("Email-ul pentru resetare a fost trimis!"); // Afișăm mesaj de succes
       }

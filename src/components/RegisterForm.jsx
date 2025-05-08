@@ -283,8 +283,8 @@ const RegisterForm = () => {
         </div>
 
         <p className="text-sm text-gray-600 mt-4">
-          Declar că am luat la cunoștință de principiile prelucrării datelor și
-          de termenii și condițiile.
+          Prin crearea contului declar că am luat la cunoștință de principiile
+          prelucrării datelor și de termenii și condițiile.
         </p>
       </form>
     </div>

@@ -36,7 +36,7 @@ app.post("/api/create-payment-intent", async (req, res) => {
   }
 });
 
-// Endpoint pentru crearea SetupIntent (pentru salvarea cardurilor noi)
+// Endpoint pentru crearea SetupIntent (ptsalvarea cardurilor noi)
 app.post("/api/create-setup-intent", async (req, res) => {
   try {
     const { email } = req.body;

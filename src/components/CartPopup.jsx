@@ -93,7 +93,7 @@ const CartPopup = ({ forceVisible }) => {
         timerRef.current = setTimeout(() => {
           setVisible(false);
           timerRef.current = null;
-        }, 100);
+        }, 200);
       }}
       onClick={() => navigate("/cart")}
       className={`fixed top-16 right-8 text-sky-950 bg-slate-100 border-2 border-gray-200 rounded shadow-lg p-6 cursor-pointer z-[9000] min-w-[250px] 

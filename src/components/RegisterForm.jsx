@@ -29,7 +29,7 @@ const RegisterForm = () => {
       firstName: "",
       lastName: "",
       phone: "",
-      subscribe: false, // Checkbox implicit "neabonat"
+      subscribe: false,
     });
   }, []);
 
@@ -37,7 +37,7 @@ const RegisterForm = () => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value, // Gestionăm și checkbox-ul
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -69,6 +69,7 @@ const RegisterForm = () => {
     }
 
     try {
+      // Creăm contul de utilizator prin Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -99,7 +100,13 @@ const RegisterForm = () => {
       }, 4000);
     } catch (err) {
       console.error("Eroare la înregistrare:", err.message);
-      setError(err.message);
+      // Dacă eroarea provine dintr-o constrângere de cheie străină,
+      // afișăm mesajul dorit în popup.
+      if (err.message.includes("violates foreign key constraint")) {
+        setError("Acest utilizator deja exista. Adauga alt email.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -166,7 +173,7 @@ const RegisterForm = () => {
               id="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              autoComplete="off" // Dezactivează autocompletarea pentru acest câmp
+              autoComplete="off"
               className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -187,13 +194,14 @@ const RegisterForm = () => {
               required
             />
           </div>
+
           <div>
             <label htmlFor="email" className="block text-gray-600 text-s">
               Email
             </label>
             <input
               type="email"
-              name="email" // Schimbăm name-ul pentru a evita autocompletarea
+              name="email"
               id="email"
               value={formData.email}
               onChange={handleChange}
@@ -209,7 +217,7 @@ const RegisterForm = () => {
             </label>
             <input
               type="password"
-              name="password" // Schimbăm name-ul pentru a evita autocompletarea
+              name="password"
               id="password"
               value={formData.password}
               onChange={handleChange}
@@ -276,7 +284,7 @@ const RegisterForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-sky-900 text-white  duration-100 active:scale-105 hover:bg-sky-800 active:bg-sky-700 py-2 rounded-md"
+            className="w-full bg-sky-900 text-white duration-100 active:scale-105 hover:bg-sky-800 active:bg-sky-700 py-2 rounded-md"
           >
             {loading ? "Se înregistrează..." : "Înregistrare"}
           </button>

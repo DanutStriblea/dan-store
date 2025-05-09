@@ -63,7 +63,7 @@ const Login = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40">
       <form
         onSubmit={handleLogin}
         className="relative bg-white p-6 rounded shadow-md w-80"

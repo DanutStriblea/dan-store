@@ -54,7 +54,7 @@ const MyAccount = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-100 rounded-lg shadow-md">
+    <div className="max-w-4xl mx-auto p-6 bg-slate-200 rounded-lg shadow-md">
       <div className="mb-6">
         <h1 className="text-2xl text-sky-900 font-bold">Salut {firstName}!</h1>
         <p className="text-sky-600">

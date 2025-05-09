@@ -5,24 +5,32 @@ import { FaStar } from "react-icons/fa";
 
 const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
   const navigate = useNavigate();
-  const [genderFilter, setGenderFilter] = useState("");
-  // Folosim o stare pentru prețul maxim; minimul este fixat la 1 RON
+  // Schimbăm filtrul de gen pentru a permite selecția multiplă (checkbox-uri)
+  const [genderFilter, setGenderFilter] = useState([]);
+  // Starea pentru prețul maxim; minimul este fixat la 1 RON
   const [maxPrice, setMaxPrice] = useState(5000);
   const [rating, setRating] = useState(0);
 
-  const updateFilters = (gender, maxPrice, rating) => {
+  // Convertim lista de genuri selectate într-un string, separate prin virgulă, pentru URL.
+  const updateFilters = (genders, maxPrice, rating) => {
+    const genderParam = genders.join(",");
     navigate(
-      `/product-list?gender=${gender}&minPrice=1&maxPrice=${maxPrice}&rating=${rating}`
+      `/product-list?gender=${genderParam}&minPrice=1&maxPrice=${maxPrice}&rating=${rating}`
     );
   };
 
-  const handleGenderFilterClick = (gender) => {
-    if (genderFilter === gender) {
-      setGenderFilter("");
-      updateFilters("", maxPrice, rating);
+  // Funcție pentru gestionarea checkbox-urilor
+  const handleGenderCheckboxChange = (e) => {
+    const gender = e.target.value;
+
+    // Dacă genul este deja selectat, îl deselectăm
+    if (genderFilter.includes(gender)) {
+      setGenderFilter([]);
+      updateFilters([], maxPrice, rating);
     } else {
-      setGenderFilter(gender);
-      updateFilters(gender, maxPrice, rating);
+      // Selectăm doar genul curent
+      setGenderFilter([gender]);
+      updateFilters([gender], maxPrice, rating);
     }
   };
 
@@ -48,21 +56,22 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
     <>
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+          className="fixed inset-0 bg-stone-900 bg-opacity-50 z-20 md:hidden"
           onClick={handleOverlayClick}
         ></div>
       )}
       <nav
-        style={{ boxShadow: "4px 0 8px rgba(0, 0, 0, 0.3)" }}
-        className={`fixed md:static inset-y-0 left-0 bg-gray-900 text-white p-4 transition-transform duration-300 ease-in-out z-30 top-[6.5rem] bottom-[4.5rem] w-64 md:w-1/4 lg:w-1/5 xl:w-1/6 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        style={{ boxShadow: "4px 0 8px rgba(0, 0, 0, 0.1)" }}
+        className={`fixed md:static inset-y-0 left-0 bg-stone-900 text-gray-300 p-4 
+    transition-transform duration-300 ease-in-out z-30 top-[6.5rem] bottom-[4.5rem] 
+    w-64 md:w-1/4 lg:w-[12%] xl:w-[12%] ${
+      isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+    }`}
       >
-        {/* Sidebar content */}
         <div className="relative z-10 h-full">
-          {/* Butonul de închidere pentru mobile, mărit și repoziționat */}
+          {/* Butonul de închidere pentru mobile */}
           <button
-            className="absolute -top-2 right-0 md:hidden text-xl text-gray-400 hover:text-gray-50"
+            className="absolute -top-2 right-0 md:hidden text-xl text-gray-700 hover:text-gray-900"
             onClick={toggleSidebar}
           >
             ✕
@@ -70,33 +79,33 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
 
           <ul className="space-y-4">
             <li>
-              <p className="text-gray-400 font-bold pb-2 border-b border-gray-700">
+              <p className="text-stone-300 font-bold pb-2 mt-2 border-gray-400">
                 Filtre
               </p>
-              <div className="mt-4">
-                <p className="text-sm text-gray-400 mb-1">Categorie:</p>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleGenderFilterClick("masculin")}
-                    className={`py-2 px-3 rounded transition-transform duration-200 ${
-                      genderFilter === "masculin"
-                        ? "scale-105 bg-sky-900"
-                        : "scale-100 bg-gray-700 md:bg-gray-800 md:hover:bg-gray-700"
-                    }`}
-                  >
+              <div className="mt-8">
+                <p className="text-sm text-gray-400 mb-2">Categorie:</p>
+                {/* Layout vertical pentru checkbox-uri */}
+                <div className="flex flex-col space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      value="masculin"
+                      checked={genderFilter.includes("masculin")}
+                      onChange={handleGenderCheckboxChange}
+                      className="mr-2"
+                    />
                     Bărbați
-                  </button>
-
-                  <button
-                    onClick={() => handleGenderFilterClick("feminin")}
-                    className={`py-2 px-3 rounded transition-transform duration-200 ${
-                      genderFilter === "feminin"
-                        ? "scale-105 bg-sky-900"
-                        : "scale-100 bg-gray-700 md:bg-gray-800 md:hover:bg-gray-700"
-                    }`}
-                  >
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      value="feminin"
+                      checked={genderFilter.includes("feminin")}
+                      onChange={handleGenderCheckboxChange}
+                      className="mr-2"
+                    />
                     Femei
-                  </button>
+                  </label>
                 </div>
               </div>
             </li>
@@ -125,7 +134,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
             <li>
               <label
                 htmlFor="rating"
-                className="text-sm text-gray-400 block mb-1 mt-10"
+                className="text-sm text-gray-600 block mb-1 mt-10"
               >
                 Rating:
               </label>

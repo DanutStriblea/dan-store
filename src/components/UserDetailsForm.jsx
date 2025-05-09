@@ -115,12 +115,13 @@ const UserDetailsForm = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-8 p-6 bg-gray-50 shadow-lg border rounded-lg relative">
+    <div className="max-w-lg mx-auto mt-8 p-6 bg-slate-50 shadow-lg border rounded-lg relative">
       <h2 className="text-2xl font-semibold text-center mb-4">
         <div className="relative">
           <button
             onClick={() => navigate("/MyAccount")}
-            className="text-gray-500 hover:text-gray-700 text-3xl absolute -top-4 -right-2 font-bold transform transition duration-250 active:scale-105"
+            className="text-gray-500 hover:text-gray-700 
+            text-3xl absolute -top-4 -right-2 font-bold transform transition duration-250 active:scale-105"
           >
             &times;
           </button>

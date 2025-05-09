@@ -32,7 +32,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-auto">
+    <div className="flex flex-col h-screen overflow-auto bg-stone-50">
       {/* Secțiuni de header ale aplicației */}
       <Header1 onSearch={handleSearch} />
       <Header2 toggleSidebar={toggleSidebar} onHomeClick={handleHomeClick} />

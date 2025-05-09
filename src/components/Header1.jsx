@@ -6,6 +6,8 @@ import { FavoriteContext } from "../context/FavoriteContext";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import Logout from "./Logout";
+import AccountDropdown from "./AccountDropdown"; // Componenta pentru meniul "Contul Meu"
+import FavoritePopup from "../components/FavoritePopup"; // Componenta pentru popup-ul de favorite
 import { useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import CartPopup from "../components/CartPopup";
@@ -17,6 +19,8 @@ const Header1 = ({ onSearch }) => {
 
   const [firstName, setFirstName] = useState("");
   const [isCartHovered, setIsCartHovered] = useState(false);
+  const [isFavoriteHovered, setIsFavoriteHovered] = useState(false); // Stare pentru hover-ul zonei Favorite
+
   // Ref pentru a gestiona timerul la ieșirea din zona de hover a coșului
   const cartHoverTimerRef = useRef(null);
 
@@ -113,7 +117,7 @@ const Header1 = ({ onSearch }) => {
             <SearchBar onSearch={onSearch} />
           </div>
 
-          {/* Secțiunea de utilizator, salut și butoane */}
+          {/* Secțiunea de utilizator și butoanele din partea dreaptă */}
           <div className="flex items-center space-x-4 text-gray-600">
             {isAuthenticated && (
               <div className="hidden sm:inline text-sm text-green-500">
@@ -124,14 +128,8 @@ const Header1 = ({ onSearch }) => {
               (isAuthenticated ? (
                 <>
                   <Logout />
-                  <NavLink to="/myaccount">
-                    <button className="flex items-center space-x-1 hover:text-gray-800 text-sm">
-                      <FaUser className="w-4 h-4" />
-                      <span className="hidden lg:inline text-xs">
-                        Contul Meu
-                      </span>
-                    </button>
-                  </NavLink>
+                  {/* Componenta AccountDropdown pentru "Contul Meu" */}
+                  <AccountDropdown firstName={firstName} />
                 </>
               ) : (
                 <NavLink to="/login">
@@ -142,20 +140,29 @@ const Header1 = ({ onSearch }) => {
                 </NavLink>
               ))}
 
-            <NavLink
-              to="/favorite"
-              className="relative flex items-center space-x-1 hover:text-gray-800 text-sm"
+            {/* Containerul pentru zona Favorite cu hover */}
+            <div
+              className="relative inline-block"
+              onMouseEnter={() => setIsFavoriteHovered(true)}
+              onMouseLeave={() => setIsFavoriteHovered(false)}
             >
-              <div className="relative">
-                <FaHeart className="w-4 h-4" />
-                {favoriteItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full">
-                    {favoriteItems.length}
-                  </span>
-                )}
-              </div>
-              <span className="hidden lg:inline text-xs">Favorite</span>
-            </NavLink>
+              <NavLink
+                to="/favorite"
+                className="relative flex items-center space-x-1 hover:text-gray-800 text-sm"
+              >
+                <div className="relative">
+                  <FaHeart className="w-4 h-4" />
+                  {favoriteItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full">
+                      {favoriteItems.length}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden lg:inline text-xs">Favorite</span>
+              </NavLink>
+              {/* FavoritePopup se afișează la hover peste zona Favorite */}
+              <FavoritePopup forceVisible={isFavoriteHovered} />
+            </div>
 
             {/* Containerul pentru elementul coș */}
             <div
@@ -174,7 +181,7 @@ const Header1 = ({ onSearch }) => {
                   cartHoverTimerRef.current = setTimeout(() => {
                     setIsCartHovered(false);
                     cartHoverTimerRef.current = null;
-                  }, 200); // delay de 0.5 secundă pentru a putea ajunge pe popup
+                  }, 200); // Delay pentru a putea ajunge pe popup
                 }
               }}
             >

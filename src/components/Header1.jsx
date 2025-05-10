@@ -145,7 +145,9 @@ const Header1 = ({ onSearch }) => {
                     <NavLink to="/myaccount">
                       <button className="flex items-center space-x-1 hover:text-gray-800 text-sm">
                         <FaUser className="w-4 h-4" />
-                        <span className="text-xs">Contul Meu</span>
+                        <span className="hidden lg:inline text-xs">
+                          Contul Meu
+                        </span>
                       </button>
                     </NavLink>
                   )}

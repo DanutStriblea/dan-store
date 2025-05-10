@@ -13,19 +13,29 @@ import { supabase } from "../supabaseClient";
 import CartPopup from "../components/CartPopup";
 
 const Header1 = ({ onSearch }) => {
+  // Contextele folosite
   const { favoriteItems } = useContext(FavoriteContext);
   const { cartItems } = useContext(CartContext);
   const { isAuthenticated, showLogoutMessage } = useContext(AuthContext);
 
+  // Starea pentru utilizator și pop-up-uri
   const [firstName, setFirstName] = useState("");
   const [isCartHovered, setIsCartHovered] = useState(false);
-  const [isFavoriteHovered, setIsFavoriteHovered] = useState(false); // Stare pentru hover-ul zonei Favorite
+  const [isFavoriteHovered, setIsFavoriteHovered] = useState(false);
+  // Noua stare care determină dacă ecranul este de tip Desktop (full view)
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
-  // Ref pentru a gestiona timerul la ieșirea din zona de hover a coșului
+  // Ref pentru gestionarea timer-ului la hover al coșului
   const cartHoverTimerRef = useRef(null);
 
-  // Helper: verifică dacă afișarea se face pe desktop
-  const isDesktop = () => window.innerWidth >= 1024;
+  // Actualizarea stării isDesktop la redimensionarea ferestrei
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Funcția pentru a prelua datele utilizatorului
   const fetchUserDetails = async () => {
@@ -128,8 +138,17 @@ const Header1 = ({ onSearch }) => {
               (isAuthenticated ? (
                 <>
                   <Logout />
-                  {/* Componenta AccountDropdown pentru "Contul Meu" */}
-                  <AccountDropdown firstName={firstName} />
+                  {isDesktop ? (
+                    <AccountDropdown firstName={firstName} />
+                  ) : (
+                    // Pentru mobile, afișăm un buton simplificat care navighează către "Contul Meu"
+                    <NavLink to="/myaccount">
+                      <button className="flex items-center space-x-1 hover:text-gray-800 text-sm">
+                        <FaUser className="w-4 h-4" />
+                        <span className="text-xs">Contul Meu</span>
+                      </button>
+                    </NavLink>
+                  )}
                 </>
               ) : (
                 <NavLink to="/login">
@@ -140,11 +159,19 @@ const Header1 = ({ onSearch }) => {
                 </NavLink>
               ))}
 
-            {/* Containerul pentru zona Favorite cu hover */}
+            {/* Zona Favorite */}
             <div
               className="relative inline-block"
-              onMouseEnter={() => setIsFavoriteHovered(true)}
-              onMouseLeave={() => setIsFavoriteHovered(false)}
+              onMouseEnter={() => {
+                if (isDesktop) {
+                  setIsFavoriteHovered(true);
+                }
+              }}
+              onMouseLeave={() => {
+                if (isDesktop) {
+                  setIsFavoriteHovered(false);
+                }
+              }}
             >
               <NavLink
                 to="/favorite"
@@ -160,15 +187,14 @@ const Header1 = ({ onSearch }) => {
                 </div>
                 <span className="hidden lg:inline text-xs">Favorite</span>
               </NavLink>
-              {/* FavoritePopup se afișează la hover peste zona Favorite */}
-              <FavoritePopup forceVisible={isFavoriteHovered} />
+              {isDesktop && <FavoritePopup forceVisible={isFavoriteHovered} />}
             </div>
 
-            {/* Containerul pentru elementul coș */}
+            {/* Zona Coș */}
             <div
               className="relative inline-block"
               onMouseEnter={() => {
-                if (isDesktop()) {
+                if (isDesktop) {
                   if (cartHoverTimerRef.current) {
                     clearTimeout(cartHoverTimerRef.current);
                     cartHoverTimerRef.current = null;
@@ -177,7 +203,7 @@ const Header1 = ({ onSearch }) => {
                 }
               }}
               onMouseLeave={() => {
-                if (isDesktop()) {
+                if (isDesktop) {
                   cartHoverTimerRef.current = setTimeout(() => {
                     setIsCartHovered(false);
                     cartHoverTimerRef.current = null;
@@ -199,7 +225,7 @@ const Header1 = ({ onSearch }) => {
                 </div>
                 <span className="hidden lg:inline text-xs">Coș</span>
               </NavLink>
-              <CartPopup forceVisible={isCartHovered} />
+              {isDesktop && <CartPopup forceVisible={isCartHovered} />}
             </div>
           </div>
         </div>

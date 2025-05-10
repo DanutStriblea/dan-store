@@ -9,7 +9,6 @@ import PaymentMethod from "../components/PaymentMethod";
 import OrderSummary from "../components/OrderSummary";
 import { supabase } from "../supabaseClient";
 
-// Funcție pentru inițializarea orderId
 const initializeOrderId = async (setOrderId, setLoading) => {
   let tempOrderId = localStorage.getItem("tempOrderId");
   if (!tempOrderId) {
@@ -27,11 +26,16 @@ const initializeOrderId = async (setOrderId, setLoading) => {
     return;
   }
 
+  // Verificăm dacă avem ID-uri de adrese salvate în localStorage
+  const savedDeliveryId = localStorage.getItem("selected_delivery_address_id");
+  const savedBillingId = localStorage.getItem("selected_billing_address_id");
+
+  // Dacă avem ID-uri salvate, le includem în upsert
   const { error } = await supabase.from("order_details").upsert({
     id: tempOrderId,
     user_id: session.data.session.user.id,
-    delivery_address_id: null,
-    billing_address_id: null,
+    delivery_address_id: savedDeliveryId || null,
+    billing_address_id: savedBillingId || null,
   });
 
   if (error) {
@@ -39,6 +43,7 @@ const initializeOrderId = async (setOrderId, setLoading) => {
   } else {
     console.log("Order details upsert cu succes pentru id:", tempOrderId);
   }
+
   setOrderId(tempOrderId);
   setLoading(false);
 };
@@ -48,29 +53,33 @@ const OrderDetails = () => {
   const [orderId, setOrderId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("Card");
+  const [cardType, setCardType] = useState("newCard");
 
-  const {
-    addresses,
-    favoriteAddress,
-    isAddressesReady,
-    fetchAddresses,
-    error,
-  } = useContext(AddressContext);
-
-  const [deliveryMethod, setDeliveryMethod] = useState("courier");
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [billingAddress, setBillingAddress] = useState(null);
-
-  // Stări legate de plată – acestea sunt setate din PaymentMethod.jsx prin props
-  const [paymentMethod, setPaymentMethod] = useState("Card"); // Valoare default: "Card"
-  const [cardType, setCardType] = useState("newCard"); // Presupunem implicit că se dorește introducerea unui nou card
+  const { isAddressesReady, fetchAddresses, deliveryAddress, billingAddress } =
+    useContext(AddressContext);
 
   useEffect(() => {
     const forceSyncData = async () => {
       setLoading(true);
       try {
+        // Inițializăm ID-ul comenzii
         await initializeOrderId(setOrderId, setLoading);
-        await fetchAddresses();
+
+        // Încărcăm adresele
+        const adrese = await fetchAddresses();
+
+        // După încărcarea adreselor, verificăm dacă avem adrese valide
+        if (!adrese || adrese.length === 0) {
+          // Dacă nu avem adrese, ștergem referințele din localStorage
+          localStorage.removeItem("selected_delivery_address_id");
+          localStorage.removeItem("selected_billing_address_id");
+          console.log(
+            "Nu există adrese în baza de date. Resetăm selecțiile anterioare."
+          );
+        }
+
+        // Actualizăm cheia de refresh pentru a forța re-renderarea componentei
         setRefreshKey((prevKey) => prevKey + 1);
       } catch (err) {
         console.error("Eroare în timpul actualizării datelor:", err.message);
@@ -82,15 +91,6 @@ const OrderDetails = () => {
     forceSyncData();
   }, [fetchAddresses]);
 
-  if (error) {
-    return (
-      <div className="p-4 text-center">
-        Eroare: {error} – Te rugăm să te autentifici pentru a putea vedea
-        adresele.
-      </div>
-    );
-  }
-
   if (loading || !orderId || !isAddressesReady) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -99,19 +99,10 @@ const OrderDetails = () => {
     );
   }
 
-  // Funcția de navigare către FinalOrderDetails
   const handleNextStep = () => {
-    console.log("Navigare către FinalOrderDetails:", {
-      orderId,
-      selectedAddress,
-      billingAddress,
-      paymentMethod,
-      cardType,
-    });
-
     if (
       !orderId ||
-      !selectedAddress ||
+      !deliveryAddress ||
       !billingAddress ||
       !paymentMethod ||
       !cardType
@@ -120,13 +111,12 @@ const OrderDetails = () => {
       return;
     }
 
-    // Citește din localStorage valorile persistente pentru metoda de plată
+    let computedPaymentSummary = "";
     const storedPaymentMethod =
       localStorage.getItem("paymentMethod") || paymentMethod;
     const storedCardType = localStorage.getItem("selectedCard") || cardType;
     const savedCardDetailsString = localStorage.getItem("savedCardDetails");
 
-    let computedPaymentSummary = "";
     if (storedPaymentMethod === "Card") {
       if (storedCardType === "newCard") {
         computedPaymentSummary = "Plătește cu alt card";
@@ -152,12 +142,8 @@ const OrderDetails = () => {
       state: {
         orderId,
         orderData: {
-          deliveryAddress: selectedAddress,
-          billingAddress: billingAddress,
-          // Dacă dorești, poți transmite și detaliile cardului selectat:
-          selectedCardDetails: savedCardDetailsString
-            ? JSON.parse(savedCardDetailsString)
-            : null,
+          deliveryAddress,
+          billingAddress,
         },
         paymentMethod: storedPaymentMethod,
         cardType: storedCardType,
@@ -174,21 +160,10 @@ const OrderDetails = () => {
       <h1 className="text-2xl font-bold mb-4 text-sky-800">Detalii Comandă</h1>
       <DeliveryMethod
         orderId={orderId}
-        deliveryMethod={deliveryMethod}
-        setDeliveryMethod={setDeliveryMethod}
-        selectedAddress={selectedAddress}
-        addresses={addresses}
-        favoriteAddress={favoriteAddress}
-        setSelectedAddress={setSelectedAddress}
-        fetchAddresses={fetchAddresses}
+        deliveryMethod="courier"
+        setDeliveryMethod={() => {}}
       />
-      <BillingDetails
-        billingAddress={billingAddress}
-        addresses={addresses}
-        orderId={orderId}
-        setBillingAddress={setBillingAddress}
-        fetchAddresses={fetchAddresses}
-      />
+      <BillingDetails orderId={orderId} fetchAddresses={fetchAddresses} />
       <PaymentMethod
         orderId={orderId}
         setPaymentMethod={setPaymentMethod}

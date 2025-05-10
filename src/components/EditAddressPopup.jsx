@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import PropTypes from "prop-types";
 import { supabase } from "../supabaseClient";
+import { AddressContext } from "../context/AddressContext";
 
 const EditAddressPopup = ({
   address,
@@ -9,6 +10,8 @@ const EditAddressPopup = ({
   fetchAddresses,
   updateSelectedAddress,
 }) => {
+  const { addresses } = useContext(AddressContext);
+
   const [formData, setFormData] = useState({
     name: "",
     phone_number: "",
@@ -17,16 +20,26 @@ const EditAddressPopup = ({
     county: "",
   });
 
-  const [errorMessage, setErrorMessage] = useState(""); // Mesaj pentru validare
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (address) {
+    // Dacă există proprietăți în address, atunci prepopulăm formularul
+    if (address && Object.keys(address).length > 0) {
       setFormData({
         name: address.name || "",
         phone_number: address.phone_number || "",
         address: address.address || "",
         city: address.city || "",
         county: address.county || "",
+      });
+    } else {
+      // În modul adăugare se resetează formularul complet
+      setFormData({
+        name: "",
+        phone_number: "",
+        address: "",
+        city: "",
+        county: "",
       });
     }
   }, [address]);
@@ -37,24 +50,47 @@ const EditAddressPopup = ({
   };
 
   const saveAddress = async () => {
+    // Dacă se editează, păstrăm valoarea existentă pentru is_default,
+    // dacă se creează (adică adresa este goală) și nu există nicio adresă în context,
+    // se setează automat ca default.
+    const isDefault =
+      address && Object.keys(address).length > 0
+        ? address.is_default
+        : addresses.length === 0;
+
     const payload = {
       ...formData,
-      is_default: address?.is_default || false, // Favorită existentă sau prima adresă nouă
-      id: address?.id || undefined,
+      is_default: isDefault,
     };
 
-    const { data, error } = await supabase
-      .from("user_addresses")
-      .upsert(payload)
-      .select() // Returnăm toate datele relevante
-      .single();
+    let operationPromise;
+    if (address && address.id) {
+      // Editing existing address: folosim UPSERT (sau UPDATE)
+      payload.id = address.id;
+      operationPromise = supabase
+        .from("user_addresses")
+        .upsert(payload)
+        .select()
+        .single();
+    } else {
+      // Addition: folosim INSERT pentru a crea o nouă intrare
+      operationPromise = supabase
+        .from("user_addresses")
+        .insert(payload)
+        .select()
+        .single();
+    }
+
+    const { data, error } = await operationPromise;
 
     if (!error && data) {
       console.log("Adresa salvată cu succes:", data);
 
-      updateSelectedAddress(data); // Sincronizăm direct selectedAddress
-      await fetchAddresses(); // Reîmprospătăm lista globală de adrese
-      onClose(); // Închidem pop-up-ul
+      if (updateSelectedAddress) {
+        updateSelectedAddress(data);
+      }
+      await fetchAddresses();
+      onClose();
     } else {
       console.error("Eroare la salvarea adresei:", error);
     }
@@ -63,7 +99,7 @@ const EditAddressPopup = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validare: toate câmpurile trebuie completate
+    // Validare: toate câmpurile sunt obligatorii
     if (
       !formData.name.trim() ||
       !formData.phone_number.trim() ||
@@ -76,7 +112,7 @@ const EditAddressPopup = ({
     }
 
     await saveAddress();
-    setErrorMessage(""); // Resetăm mesajul de eroare după salvare
+    setErrorMessage("");
   };
 
   if (!isOpen) return null;
@@ -86,7 +122,9 @@ const EditAddressPopup = ({
       <div className="bg-white p-6 rounded-md shadow-md w-[30rem]">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-sky-700">
-            {address ? "Editare adresă" : "Adaugă adresă"}
+            {address && Object.keys(address).length > 0
+              ? "Editare adresă"
+              : "Adaugă adresă"}
           </h2>
           <button
             className="text-gray-600 hover:text-gray-800 font-bold text-xl"
@@ -96,7 +134,6 @@ const EditAddressPopup = ({
           </button>
         </div>
 
-        {/* Mesaj de eroare */}
         {errorMessage && (
           <div className="mb-4 text-red-600">{errorMessage}</div>
         )}

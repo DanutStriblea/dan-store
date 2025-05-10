@@ -42,33 +42,120 @@ const UserAddresses = () => {
   const deleteAddress = async () => {
     if (!addressToDelete) return;
 
+    // Verificăm dacă adresa pe care o ștergem este setată ca adresă de livrare sau facturare
+    const deliveryAddressId = localStorage.getItem(
+      "selected_delivery_address_id"
+    );
+    const billingAddressId = localStorage.getItem(
+      "selected_billing_address_id"
+    );
+    const isSelectedForDelivery = deliveryAddressId === addressToDelete.id;
+    const isSelectedForBilling = billingAddressId === addressToDelete.id;
+
     const { error } = await supabase
       .from("user_addresses")
       .delete()
       .eq("id", addressToDelete.id);
 
     if (!error) {
-      // Verificăm dacă adresa ștearsă era favorită
-      if (addressToDelete.is_default) {
-        const { data: remainingAddresses, fetchError } = await supabase
-          .from("user_addresses")
-          .select("*");
+      // Obținem adresele rămase
+      const { data: remainingAddresses, fetchError } = await supabase
+        .from("user_addresses")
+        .select("*");
 
-        if (fetchError) {
-          console.error("Eroare la verificarea adreselor rămase:", fetchError);
-          return;
+      if (fetchError) {
+        console.error("Eroare la verificarea adreselor rămase:", fetchError);
+        return;
+      }
+
+      // Dacă nu mai avem adrese, curățăm localStorage și order_details
+      if (remainingAddresses.length === 0) {
+        localStorage.removeItem("selected_delivery_address_id");
+        localStorage.removeItem("selected_billing_address_id");
+        sessionStorage.removeItem("cached_addresses");
+
+        // Actualizăm și order_details dacă există
+        const orderId = localStorage.getItem("tempOrderId");
+        if (orderId) {
+          await supabase
+            .from("order_details")
+            .update({
+              delivery_address_id: null,
+              billing_address_id: null,
+            })
+            .eq("id", orderId);
         }
-
-        // Setăm următoarea adresă ca favorită, dacă există
-        if (remainingAddresses.length > 0) {
+      } else {
+        // Dacă era adresa favorită, setăm o nouă favorită
+        if (addressToDelete.is_default) {
           const nextFavorite = remainingAddresses[0]; // Prima adresă rămasă
-          const { updateError } = await supabase
+          await supabase
             .from("user_addresses")
             .update({ is_default: true })
             .eq("id", nextFavorite.id);
 
-          if (updateError) {
-            console.error("Eroare la setarea noii favorite:", updateError);
+          // Dacă adresa ștearsă era folosită pentru livrare/facturare, actualizăm cu noua favorită
+          if (isSelectedForDelivery) {
+            localStorage.setItem(
+              "selected_delivery_address_id",
+              nextFavorite.id
+            );
+            const orderId = localStorage.getItem("tempOrderId");
+            if (orderId) {
+              await supabase
+                .from("order_details")
+                .update({ delivery_address_id: nextFavorite.id })
+                .eq("id", orderId);
+            }
+          }
+
+          if (isSelectedForBilling) {
+            localStorage.setItem(
+              "selected_billing_address_id",
+              nextFavorite.id
+            );
+            const orderId = localStorage.getItem("tempOrderId");
+            if (orderId) {
+              await supabase
+                .from("order_details")
+                .update({ billing_address_id: nextFavorite.id })
+                .eq("id", orderId);
+            }
+          }
+        } else {
+          // Dacă nu era favorită dar era selectată, actualizăm cu adresa favorită
+          if (isSelectedForDelivery || isSelectedForBilling) {
+            const favoriteAddress =
+              remainingAddresses.find((addr) => addr.is_default) ||
+              remainingAddresses[0];
+
+            if (isSelectedForDelivery) {
+              localStorage.setItem(
+                "selected_delivery_address_id",
+                favoriteAddress.id
+              );
+              const orderId = localStorage.getItem("tempOrderId");
+              if (orderId) {
+                await supabase
+                  .from("order_details")
+                  .update({ delivery_address_id: favoriteAddress.id })
+                  .eq("id", orderId);
+              }
+            }
+
+            if (isSelectedForBilling) {
+              localStorage.setItem(
+                "selected_billing_address_id",
+                favoriteAddress.id
+              );
+              const orderId = localStorage.getItem("tempOrderId");
+              if (orderId) {
+                await supabase
+                  .from("order_details")
+                  .update({ billing_address_id: favoriteAddress.id })
+                  .eq("id", orderId);
+              }
+            }
           }
         }
       }

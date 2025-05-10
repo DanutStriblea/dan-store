@@ -1,152 +1,102 @@
+// BillingDetails.jsx
 import PropTypes from "prop-types";
-import { useEffect, useState, useContext } from "react";
-import { supabase } from "../supabaseClient";
-import SelectBillingPopup from "./SelectBillingPopup"; // Importăm pop-up-ul de selecție
-import { AddressContext } from "../context/AddressContext"; // Importăm contextul adreselor
+import { useContext, useState, useEffect } from "react";
+import { AddressContext } from "../context/AddressContext";
+import SelectBillingPopup from "./SelectBillingPopup";
 
-const BillingDetails = ({
-  billingAddress,
-  setBillingAddress,
-  orderId,
-  fetchAddresses,
-}) => {
-  const [showPopup, setShowPopup] = useState(false); // Stare pentru pop-up-ul de selecție
-  const { addresses, favoriteAddress, isAddressesReady } =
-    useContext(AddressContext); // Adăugăm `isAddressesReady`
+const BillingDetails = ({ orderId, fetchAddresses }) => {
+  // Extragem din context lista de adrese, adresa de facturare curentă și funcția de setare
+  const { addresses, billingAddress, setBillingAddress } =
+    useContext(AddressContext);
 
-  // 1. Sincronizăm adresa implicită sau favorită la montarea paginii
+  // Adăugăm o stare locală pentru controlul vizibilității pop-up-ului
+  const [showPopup, setShowPopup] = useState(false);
+
+  // Se asigură că adresa de facturare este afișată imediat ce este disponibilă și persistă la refresh
   useEffect(() => {
-    if (!isAddressesReady) {
-      console.log("Adresele nu sunt încă pregătite. Așteptăm sincronizarea.");
-      return;
-    }
+    if (addresses.length > 0) {
+      // Prima dată verificăm dacă avem deja un ID salvat în localStorage
+      const savedAddressId = localStorage.getItem(
+        "selected_billing_address_id"
+      );
+      const savedDeliveryId = localStorage.getItem(
+        "selected_delivery_address_id"
+      );
 
-    console.log("Lista de adrese disponibilă:", addresses);
-    console.log("Adresa favorită disponibilă:", favoriteAddress);
-    console.log("OrderId utilizat:", orderId);
+      if (savedAddressId && !billingAddress) {
+        // Dacă avem ID salvat dar nu avem adresă setată, încercăm să găsim adresa
+        const savedAddress = addresses.find(
+          (addr) => addr.id === savedAddressId
+        );
 
-    const syncSelectedBillingAddress = async () => {
-      if (!orderId) {
-        console.warn("Order ID este null sau invalid.");
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("order_details")
-          .select("billing_address_id")
-          .eq("id", orderId)
-          .single();
-
-        if (!error && data?.billing_address_id) {
-          const defaultBillingAddress = addresses.find(
-            (address) => address.id === data.billing_address_id
+        if (savedAddress) {
+          // Dacă găsim adresa salvată, o setăm
+          setBillingAddress(savedAddress, orderId);
+        } else if (savedDeliveryId) {
+          // Dacă nu găsim adresa salvată, încercăm să folosim adresa de livrare
+          const deliveryAddress = addresses.find(
+            (addr) => addr.id === savedDeliveryId
           );
-
-          if (defaultBillingAddress) {
-            setBillingAddress(defaultBillingAddress); // Setăm adresa selectată
-            console.log(
-              "Adresa selectată sincronizată din Supabase:",
-              defaultBillingAddress
-            );
-          } else {
-            console.warn(
-              "Adresa selectată nu a fost găsită în lista de adrese."
+          if (deliveryAddress) {
+            setBillingAddress(deliveryAddress, orderId);
+            localStorage.setItem(
+              "selected_billing_address_id",
+              deliveryAddress.id
             );
           }
-        } else if (favoriteAddress) {
-          // Dacă nu există billing_address_id, folosim adresa favorită
-          setBillingAddress(favoriteAddress);
-          console.log("Adresa favorită setată:", favoriteAddress);
-
-          // Actualizăm Supabase cu adresa favorită
-          await supabase
-            .from("order_details")
-            .update({ billing_address_id: favoriteAddress.id })
-            .eq("id", orderId);
-        } else {
-          console.warn("Nu există adrese favorite disponibile.");
         }
-      } catch (err) {
-        console.error(
-          "Eroare la sincronizarea adresei de facturare selectate:",
-          err.message
+      } else if (!billingAddress && savedDeliveryId) {
+        // Dacă nu avem adresă de facturare dar avem adresă de livrare, o folosim pe aceasta
+        const deliveryAddress = addresses.find(
+          (addr) => addr.id === savedDeliveryId
         );
+        if (deliveryAddress) {
+          setBillingAddress(deliveryAddress, orderId);
+          localStorage.setItem(
+            "selected_billing_address_id",
+            deliveryAddress.id
+          );
+        }
+      } else if (!billingAddress) {
+        // Dacă nu avem nici adresă de facturare nici referință salvată, folosim adresa favorită sau prima adresă
+        const favoriteAddr = addresses.find((addr) => addr.is_default);
+        if (favoriteAddr) {
+          setBillingAddress(favoriteAddr, orderId);
+          localStorage.setItem("selected_billing_address_id", favoriteAddr.id);
+        } else if (addresses.length > 0) {
+          // Dacă nu avem adresă favorită, folosim prima adresă
+          setBillingAddress(addresses[0], orderId);
+          localStorage.setItem("selected_billing_address_id", addresses[0].id);
+        }
       }
-    };
-
-    if (addresses.length > 0) {
-      syncSelectedBillingAddress();
     }
-  }, [
-    addresses,
-    favoriteAddress,
-    orderId,
-    setBillingAddress,
-    isAddressesReady,
-  ]);
+  }, [addresses, billingAddress, setBillingAddress, orderId]);
 
-  // 2. Sincronizăm automat când `billingAddress` se schimbă
+  // Ascultăm evenimentele de actualizare a adresei pentru sincronizare
   useEffect(() => {
-    const syncWithSupabase = async () => {
-      if (!billingAddress?.id || !orderId) {
-        console.warn("Adresa sau ID-ul comenzii sunt invalide.");
-        return;
-      }
-
-      try {
-        const { error } = await supabase
-          .from("order_details")
-          .update({ billing_address_id: billingAddress.id })
-          .eq("id", orderId);
-
-        if (!error) {
-          console.log(
-            `Adresa ${billingAddress.id} sincronizată cu 'billing_address_id'.`
-          );
-        } else {
-          console.error(
-            "Eroare la sincronizare 'billing_address_id':",
-            error.message
-          );
-        }
-      } catch (err) {
-        console.error(
-          "Eroare neașteptată la sincronizarea 'billing_address_id':",
-          err.message
-        );
+    const handleAddressUpdate = (event) => {
+      const { oldAddressId, newAddress } = event.detail;
+      // Dacă adresa actualizată este aceeași cu adresa de facturare, o actualizăm
+      if (billingAddress && billingAddress.id === oldAddressId) {
+        setBillingAddress(newAddress, orderId);
       }
     };
 
-    if (billingAddress?.id && orderId) {
-      syncWithSupabase();
-    }
-  }, [billingAddress, orderId]);
+    window.addEventListener("address-updated", handleAddressUpdate);
 
-  // 3. Gestionăm selecția unei adrese
+    return () => {
+      window.removeEventListener("address-updated", handleAddressUpdate);
+    };
+  }, [billingAddress, setBillingAddress, orderId]);
+
+  // Funcția de selectare a unei adrese pentru facturare
   const handleAddressSelect = async (address) => {
-    if (!address?.id || typeof address.id !== "string") {
+    if (!address?.id) {
       console.error("Adresa selectată este invalidă:", address);
       return;
     }
-
-    try {
-      const { error } = await supabase
-        .from("order_details")
-        .update({ billing_address_id: address.id })
-        .eq("id", orderId);
-
-      if (!error) {
-        setBillingAddress(address); // Setăm adresa selectată
-        console.log("Adresa selectată actualizată:", address.id);
-      } else {
-        console.error("Eroare la actualizarea adresei:", error.message);
-      }
-    } catch (err) {
-      console.error("Eroare neașteptată la selectarea adresei:", err.message);
-    }
-
-    setShowPopup(false); // Închidem pop-up-ul
+    await setBillingAddress(address, orderId);
+    setShowPopup(false); // Închidem pop-up-ul după ce se selectează o adresă
   };
 
   return (
@@ -154,7 +104,7 @@ const BillingDetails = ({
       <h2 className="text-xl font-semibold mb-4">2. Date facturare</h2>
 
       {billingAddress ? (
-        <div className="pl-4 mt-2 mb-3 bg-gray-50 p-2 flex justify-between items-center">
+        <div className="pl-4 mt-2 mb-3 bg-gray-50 p-2">
           <div>
             <p className="text-sm text-gray-500">
               <strong>Nume:</strong> {billingAddress.name}
@@ -181,7 +131,6 @@ const BillingDetails = ({
         </button>
       </div>
 
-      {/* Pop-up-ul pentru selecția adresei */}
       <SelectBillingPopup
         showPopup={showPopup}
         handlePopupClose={() => setShowPopup(false)}
@@ -195,18 +144,7 @@ const BillingDetails = ({
 };
 
 BillingDetails.propTypes = {
-  billingAddress: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    phone_number: PropTypes.string.isRequired,
-    address: PropTypes.string.isRequired,
-    city: PropTypes.string.isRequired,
-    county: PropTypes.string.isRequired,
-    id: PropTypes.string.isRequired,
-  }),
-  addresses: PropTypes.array.isRequired,
-  favoriteAddress: PropTypes.object, // Adresă favorită
   orderId: PropTypes.string.isRequired,
-  setBillingAddress: PropTypes.func.isRequired,
   fetchAddresses: PropTypes.func.isRequired,
 };
 

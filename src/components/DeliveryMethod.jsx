@@ -1,175 +1,94 @@
+// DeliveryMethod.jsx
 import PropTypes from "prop-types";
-import { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient"; // Conexiunea cu Supabase
-import SelectAddressPopup from "./SelectAddressPopup"; // Importăm componenta de selecție
-import EditAddressPopup from "./EditAddressPopup"; // Importăm componenta de editare
+import { useContext, useState, useEffect } from "react";
+import { AddressContext } from "../context/AddressContext";
+import SelectAddressPopup from "./SelectAddressPopup";
+import EditAddressPopup from "./EditAddressPopup";
 
-const DeliveryMethod = ({
-  deliveryMethod,
-  setDeliveryMethod,
-  selectedAddress,
-  setSelectedAddress,
-  favoriteAddress,
-  addresses,
-  orderId,
-  fetchAddresses, // Adăugăm prop-ul transmis
-}) => {
-  // Stări pentru pop-up-uri
-  const [showPopup, setShowPopup] = useState(false); // Pop-up de selecție adresă
-  const [showEditPopup, setShowEditPopup] = useState(false); // Pop-up de editare adresă
+const DeliveryMethod = ({ orderId, deliveryMethod, setDeliveryMethod }) => {
+  // Extragem din context doar ce e necesar (eliminând variabila nefolosită 'favoriteAddress')
+  const { addresses, deliveryAddress, setDeliveryAddress, fetchAddresses } =
+    useContext(AddressContext);
+  const [showPopup, setShowPopup] = useState(false); // Pentru pop-up-ul de selecție a adresei
+  const [showEditPopup, setShowEditPopup] = useState(false); // Pentru pop-up-ul de editare
   const [editingAddress, setEditingAddress] = useState(null);
 
-  // 1. Sincronizăm adresa selectată la montare și după refresh
+  // Se asigură că adresa de livrare este afișată imediat ce este disponibilă și persistă la refresh
   useEffect(() => {
-    console.log("OrderId utilizat în DeliveryMethod:", orderId);
-    console.log("Adrese disponibile:", addresses);
-    console.log("Adresa favorită:", favoriteAddress);
+    if (addresses.length > 0) {
+      // Prima dată verificăm dacă avem deja un ID salvat în localStorage
+      const savedAddressId = localStorage.getItem(
+        "selected_delivery_address_id"
+      );
 
-    const syncSelectedAddress = async () => {
-      if (!orderId) {
-        console.warn("Order ID este null sau invalid.");
-        return;
-      }
+      if (savedAddressId && !deliveryAddress) {
+        // Dacă avem ID salvat dar nu avem adresă setată, încercăm să găsim adresa
+        const savedAddress = addresses.find(
+          (addr) => addr.id === savedAddressId
+        );
 
-      try {
-        const { data, error } = await supabase
-          .from("order_details")
-          .select("delivery_address_id")
-          .eq("id", orderId)
-          .single();
-
-        if (!error && data?.delivery_address_id) {
-          const deliveryAddress = addresses.find(
-            (address) => address.id === data.delivery_address_id
-          );
-
-          if (deliveryAddress) {
-            setSelectedAddress(deliveryAddress); // Setam adresa selectată
-            console.log(
-              "Adresa selectată sincronizată din Supabase:",
-              deliveryAddress
+        if (savedAddress) {
+          // Dacă găsim adresa salvată, o setăm
+          setDeliveryAddress(savedAddress, orderId);
+        } else {
+          // Dacă nu găsim adresa salvată (probabil a fost ștearsă), folosim adresa favorită
+          const favoriteAddr = addresses.find((addr) => addr.is_default);
+          if (favoriteAddr) {
+            setDeliveryAddress(favoriteAddr, orderId);
+            localStorage.setItem(
+              "selected_delivery_address_id",
+              favoriteAddr.id
             );
           }
-        } else if (favoriteAddress) {
-          // Dacă nu există delivery_address_id, folosim adresa favorită
-          setSelectedAddress(favoriteAddress);
-          console.log("Adresa favorită setată:", favoriteAddress);
-
-          // Actualizăm Supabase cu adresa favorită
-          await supabase
-            .from("order_details")
-            .update({ delivery_address_id: favoriteAddress.id })
-            .eq("id", orderId);
         }
-      } catch (err) {
-        console.error(
-          "Eroare la sincronizarea adresei selectate:",
-          err.message
-        );
+      } else if (!deliveryAddress) {
+        // Dacă nu avem ID salvat și nici adresă setată, folosim adresa favorită sau prima adresă
+        const favoriteAddr = addresses.find((addr) => addr.is_default);
+        if (favoriteAddr) {
+          setDeliveryAddress(favoriteAddr, orderId);
+          localStorage.setItem("selected_delivery_address_id", favoriteAddr.id);
+        } else if (addresses.length > 0) {
+          // Dacă nu avem adresă favorită, folosim prima adresă
+          setDeliveryAddress(addresses[0], orderId);
+          localStorage.setItem("selected_delivery_address_id", addresses[0].id);
+        }
       }
-    };
-
-    if (addresses.length > 0) {
-      syncSelectedAddress();
     }
-  }, [addresses, favoriteAddress, orderId, setSelectedAddress]);
+  }, [addresses, deliveryAddress, setDeliveryAddress, orderId]);
 
-  // 2. Sincronizarea automată când `selectedAddress` se schimbă
+  // Ascultăm evenimentele de actualizare a adresei pentru sincronizare
   useEffect(() => {
-    const syncWithSupabase = async () => {
-      if (!selectedAddress?.id || !orderId) {
-        console.warn("Adresa sau ID-ul comenzii sunt invalide.");
-        return;
-      }
-
-      try {
-        const { error } = await supabase
-          .from("order_details")
-          .update({ delivery_address_id: selectedAddress.id })
-          .eq("id", orderId);
-
-        if (!error) {
-          console.log(
-            `Adresa ${selectedAddress.id} sincronizată cu 'delivery_address_id'.`
-          );
-        } else {
-          console.error(
-            "Eroare la sincronizare 'delivery_address_id':",
-            error.message
-          );
-        }
-      } catch (err) {
-        console.error(
-          "Eroare neașteptată la sincronizarea 'delivery_address_id':",
-          err.message
-        );
+    const handleAddressUpdate = (event) => {
+      const { oldAddressId, newAddress } = event.detail;
+      // Dacă adresa actualizată este aceeași cu adresa de livrare, o actualizăm
+      if (deliveryAddress && deliveryAddress.id === oldAddressId) {
+        setDeliveryAddress(newAddress, orderId);
       }
     };
 
-    if (selectedAddress?.id && orderId) {
-      syncWithSupabase();
-    }
-  }, [selectedAddress, orderId]);
+    window.addEventListener("address-updated", handleAddressUpdate);
 
-  // 3. Gestionăm selecția unei adrese
+    return () => {
+      window.removeEventListener("address-updated", handleAddressUpdate);
+    };
+  }, [deliveryAddress, setDeliveryAddress, orderId]);
+
   const handleAddressSelect = async (address) => {
-    if (!address?.id || typeof address.id !== "string") {
+    if (!address?.id) {
       console.error("Adresa selectată este invalidă:", address);
       return;
     }
-
-    try {
-      const { error } = await supabase
-        .from("order_details")
-        .update({ delivery_address_id: address.id })
-        .eq("id", orderId);
-
-      if (!error) {
-        setSelectedAddress(address); // Setăm adresa selectată
-        console.log("Adresa selectată actualizată:", address.id);
-      } else {
-        console.error("Eroare la actualizarea adresei:", error.message);
-      }
-    } catch (err) {
-      console.error("Eroare neașteptată la selectarea adresei:", err.message);
-    }
-
-    setShowPopup(false); // Închidem pop-up-ul
+    await setDeliveryAddress(address, orderId);
+    setShowPopup(false);
   };
 
-  // Gestionăm editarea unei adrese
   const openEditPopup = (address) => {
-    setEditingAddress(address); // Setăm adresa în curs de editare
-    setShowEditPopup(true); // Afișăm pop-up-ul de editare
+    setEditingAddress(address);
+    setShowEditPopup(true);
   };
 
   const closeEditPopup = () => {
     setShowEditPopup(false);
-  };
-
-  // Gestionăm salvarea unei adrese noi sau editate
-  const updateSelectedAddress = async (updatedAddress) => {
-    if (!updatedAddress?.id) {
-      console.error("Adresa actualizată este invalidă:", updatedAddress);
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("order_details")
-        .update({ delivery_address_id: updatedAddress.id })
-        .eq("id", orderId);
-
-      if (!error) {
-        await fetchAddresses(); // Reîmprospătăm lista globală de adrese
-        setSelectedAddress(updatedAddress); // Setăm adresa actualizată
-        console.log("Adresa actualizată sincronizată cu succes.");
-      } else {
-        console.error("Eroare la actualizarea adresei:", error.message);
-      }
-    } catch (err) {
-      console.error("Eroare neașteptată la actualizarea adresei:", err.message);
-    }
   };
 
   return (
@@ -204,23 +123,23 @@ const DeliveryMethod = ({
       {deliveryMethod === "courier" && (
         <div className="mt-4">
           <h3 className="font-semibold">Livrare prin curier la:</h3>
-          {selectedAddress ? (
+          {deliveryAddress ? (
             <div className="pl-4 mt-2 mb-3 bg-gray-50 p-2 flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-500">
-                  <strong>Nume:</strong> {selectedAddress.name}
+                  <strong>Nume:</strong> {deliveryAddress.name}
                 </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Telefon:</strong> {selectedAddress.phone_number}
+                  <strong>Telefon:</strong> {deliveryAddress.phone_number}
                 </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Adresă:</strong> {selectedAddress.address},{" "}
-                  {selectedAddress.city}, {selectedAddress.county}
+                  <strong>Adresă:</strong> {deliveryAddress.address},{" "}
+                  {deliveryAddress.city}, {deliveryAddress.county}
                 </p>
               </div>
               <button
                 className="bg-sky-900 text-white px-4 py-2 rounded-md hover:bg-sky-800 shadow-md transition duration-200 active:scale-95"
-                onClick={() => openEditPopup(selectedAddress)}
+                onClick={() => openEditPopup(deliveryAddress)}
               >
                 Editează
               </button>
@@ -254,8 +173,7 @@ const DeliveryMethod = ({
         handlePopupClose={() => setShowPopup(false)}
         sortedAddresses={addresses}
         popupContext={"delivery"}
-        selectedAddress={selectedAddress}
-        billingAddress={null}
+        selectedAddress={deliveryAddress}
         handleAddressSelect={handleAddressSelect}
         openEditPopup={openEditPopup}
         setShowEditPopup={setShowEditPopup}
@@ -266,37 +184,30 @@ const DeliveryMethod = ({
         onClose={closeEditPopup}
         address={editingAddress || {}}
         fetchAddresses={fetchAddresses}
-        updateSelectedAddress={updateSelectedAddress}
+        updateSelectedAddress={(updatedAddress) => {
+          // Dacă adresa curentă este cea de livrare, actualizează adresa
+          if (editingAddress?.id === deliveryAddress?.id) {
+            setDeliveryAddress(updatedAddress, orderId);
+
+            // Notificăm schimbarea globală a acestei adrese pentru sincronizare
+            const updateEvent = new CustomEvent("address-updated", {
+              detail: {
+                oldAddressId: editingAddress?.id,
+                newAddress: updatedAddress,
+              },
+            });
+            window.dispatchEvent(updateEvent);
+          }
+        }}
       />
     </div>
   );
 };
 
-EditAddressPopup.propTypes = {
-  address: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]), // Acceptăm ambele tipuri
-    name: PropTypes.string,
-    phone_number: PropTypes.string,
-    address: PropTypes.string,
-    city: PropTypes.string,
-    county: PropTypes.string,
-    is_default: PropTypes.bool,
-  }),
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  fetchAddresses: PropTypes.func.isRequired,
-  updateSelectedAddress: PropTypes.func,
-};
-
 DeliveryMethod.propTypes = {
   deliveryMethod: PropTypes.string.isRequired,
   setDeliveryMethod: PropTypes.func.isRequired,
-  selectedAddress: PropTypes.object,
-  addresses: PropTypes.array.isRequired,
-  setSelectedAddress: PropTypes.func.isRequired,
   orderId: PropTypes.string.isRequired,
-  favoriteAddress: PropTypes.object,
-  fetchAddresses: PropTypes.func.isRequired,
 };
 
 export default DeliveryMethod;

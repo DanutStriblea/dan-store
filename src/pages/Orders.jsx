@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { supabase } from "../supabaseClient";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -8,13 +9,23 @@ const Orders = () => {
   // Folosim o stare care reține id-ul comenzii expandate;
   // dacă e null, nicio comandă nu este deschisă.
   const [expandedOrderId, setExpandedOrderId] = useState(null);
-
+  // Obținem user din contextul de autentificare
+  const { user } = useContext(AuthContext);
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        // Verificăm dacă avem utilizator autentificat
+        if (!user || !user.id) {
+          console.error("Utilizator neautentificat sau fără ID valid");
+          setIsLoading(false);
+          return;
+        }
+
+        // Filtrăm comenzile după user_id
         const { data: ordersData, error: ordersError } = await supabase
           .from("submitted_orders")
           .select("*, products_ordered")
+          .eq("user_id", user.id) // Filtrăm după ID-ul utilizatorului curent
           .order("created_at", { ascending: false });
 
         if (ordersError) {
@@ -58,9 +69,8 @@ const Orders = () => {
         setIsLoading(false);
       }
     };
-
     fetchOrders();
-  }, []);
+  }, [user]);
 
   // Funcție de toggle: dacă comanda dată e deja deschisă, o închide (setează null)
   // altfel setează expandedOrderId la id-ul comenzii respective.

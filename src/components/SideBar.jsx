@@ -134,7 +134,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
             <li>
               <label
                 htmlFor="rating"
-                className="text-sm text-gray-600 block mb-1 mt-10"
+                className="text-sm text-gray-400 block mb-1 mt-10"
               >
                 Rating:
               </label>

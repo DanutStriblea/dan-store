@@ -135,7 +135,7 @@ const UserAddresses = () => {
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Adresele Mele</h2>
-      <div className="mb-4 pr-[50%]">
+      <div className="mb-4 pr-0 md:pr-4 lg:pr-[50%]">
         {addresses.map((address) => (
           <div
             key={address.id}

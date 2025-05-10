@@ -74,13 +74,13 @@ const AccountDropdown = () => {
             visible ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="px-4  border-gray-200"></div>
+          <div className="px-4 border-gray-200 "></div>
           <ul>
             <li>
               <NavLink
                 to="/myaccount"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 "
+                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm "
               >
                 Datele tale
               </NavLink>
@@ -89,7 +89,7 @@ const AccountDropdown = () => {
               <NavLink
                 to="/addresses"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600"
+                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm"
               >
                 Adrese
               </NavLink>
@@ -98,7 +98,7 @@ const AccountDropdown = () => {
               <NavLink
                 to="/orders"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600"
+                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm"
               >
                 Comenzi
               </NavLink>
@@ -107,7 +107,7 @@ const AccountDropdown = () => {
               <NavLink
                 to="/returns"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600"
+                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm"
               >
                 Retururi
               </NavLink>

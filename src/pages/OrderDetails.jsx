@@ -55,9 +55,17 @@ const OrderDetails = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("Card");
   const [cardType, setCardType] = useState("newCard");
+  const [showError, setShowError] = useState(false);
 
   const { isAddressesReady, fetchAddresses, deliveryAddress, billingAddress } =
     useContext(AddressContext);
+
+  // Efect pentru a reseta mesajul de eroare când adresele devin disponibile
+  useEffect(() => {
+    if (deliveryAddress && billingAddress && showError) {
+      setShowError(false);
+    }
+  }, [deliveryAddress, billingAddress, showError]);
 
   useEffect(() => {
     const forceSyncData = async () => {
@@ -108,9 +116,20 @@ const OrderDetails = () => {
       !cardType
     ) {
       console.error("Datele comenzii sunt incomplete. Nu putem continua.");
+      setShowError(true); // Activăm afișarea mesajului de eroare
+      // Facem scroll la începutul paginii pentru a vedea eroarea
+      window.scrollTo({
+        top: document.querySelector("button").offsetTop - 50,
+        behavior: "smooth",
+      });
       return;
     }
 
+    // Resetăm starea de eroare
+    setShowError(false);
+
+    // Dacă am ajuns aici, înseamnă că datele sunt complete, resetăm eroarea
+    setShowError(false);
     let computedPaymentSummary = "";
     const storedPaymentMethod =
       localStorage.getItem("paymentMethod") || paymentMethod;
@@ -158,11 +177,13 @@ const OrderDetails = () => {
       className="container mx-auto px-4 sm:px-10 p-4 sm:p-10 max-w-screen-sm sm:max-w-screen-md"
     >
       <h1 className="text-2xl font-bold mb-4 text-sky-800">Detalii Comandă</h1>
-      <DeliveryMethod
-        orderId={orderId}
-        deliveryMethod="courier"
-        setDeliveryMethod={() => {}}
-      />
+      <div>
+        <DeliveryMethod
+          orderId={orderId}
+          deliveryMethod="courier"
+          setDeliveryMethod={() => {}}
+        />
+      </div>
       <BillingDetails orderId={orderId} fetchAddresses={fetchAddresses} />
       <PaymentMethod
         orderId={orderId}
@@ -177,6 +198,12 @@ const OrderDetails = () => {
       >
         Pasul următor
       </button>
+
+      {showError && (
+        <p className="text-red-600 text-lg mt-3 text-center">
+          Trebuie să adaugi o adresă de livrare.
+        </p>
+      )}
     </div>
   );
 };

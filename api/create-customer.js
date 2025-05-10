@@ -1,11 +1,11 @@
+/* eslint-env node */
+/* global process */
+
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config({ path: process.cwd() + "/.env" });
 
 import Stripe from "stripe";
-
-// Replace process.env usage with a direct constant for STRIPE_SECRET_KEY
-const STRIPE_SECRET_KEY = "your-default-stripe-key";
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2020-08-27",
 });
 
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const customer = await stripe.customers.create({ email });
     return res.status(200).json({ customerId: customer.id });
   } catch (err) {
-    console.error("Error creating customer:", err);
+    console.error("Eroare la crearea clientului Stripe:", err);
     return res.status(500).json({ error: err.message });
   }
 }

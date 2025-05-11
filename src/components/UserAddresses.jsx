@@ -223,46 +223,62 @@ const UserAddresses = () => {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Adresele Mele</h2>
       <div className="mb-4 pr-0 md:pr-4 lg:pr-[50%]">
-        {addresses.map((address) => (
-          <div
-            key={address.id}
-            className={`border rounded-lg p-4 mb-4 bg-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300 ${
-              address.is_default ? "bg-slate-300" : ""
-            }`}
-          >
-            <p>
-              <strong>Nume:</strong> {address.name}
-            </p>
-            <p>
-              <strong>Telefon:</strong> {address.phone_number}
-            </p>
-            <p>
-              <strong>Adresă:</strong> {address.address}, {address.city},{" "}
-              {address.county}
-            </p>
-            <div className="flex mt-4">
-              <button
-                className="text-blue-500 hover:text-blue-700 mr-4"
-                onClick={() => openEditPopup(address)}
-              >
-                Editează
-              </button>
-              <button
-                className="text-red-500 hover:text-red-700 ml-4"
-                onClick={() => openDeleteModal(address)}
-              >
-                Șterge
-              </button>
-              <button
-                className="ml-8 text-gray-500 font-semibold hover:text-gray-700"
-                onClick={() => setDefaultAddress(address)}
-                disabled={address.is_default}
-              >
-                {address.is_default ? "Favorită" : "Setează ca Favorită"}
-              </button>
+        {/* Sortăm adresele: favorita prima, restul în ordine cronologică */}
+        {[...addresses]
+          .sort((a, b) => {
+            // Dacă una dintre adrese este favorită, aceasta va fi prima
+            if (a.is_default) return -1;
+            if (b.is_default) return 1;
+
+            // Pentru celelalte adrese, le ordonăm cronologic (după ID sau created_at dacă există)
+            // Presupunem că ID-urile sau created_at sunt crescătoare (adică valorile mai mici sunt mai vechi)
+            if (a.created_at && b.created_at) {
+              return new Date(a.created_at) - new Date(b.created_at);
+            }
+
+            // Fallback la sortare după ID dacă nu există timestamp
+            return a.id.localeCompare(b.id);
+          })
+          .map((address) => (
+            <div
+              key={address.id}
+              className={`border rounded-lg p-4 mb-4 bg-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300 ${
+                address.is_default ? "bg-slate-300" : ""
+              }`}
+            >
+              <p>
+                <strong>Nume:</strong> {address.name}
+              </p>
+              <p>
+                <strong>Telefon:</strong> {address.phone_number}
+              </p>
+              <p>
+                <strong>Adresă:</strong> {address.address}, {address.city},{" "}
+                {address.county}
+              </p>
+              <div className="flex mt-4">
+                <button
+                  className="text-blue-500 hover:text-blue-700 mr-4"
+                  onClick={() => openEditPopup(address)}
+                >
+                  Editează
+                </button>
+                <button
+                  className="text-red-500 hover:text-red-700 ml-4"
+                  onClick={() => openDeleteModal(address)}
+                >
+                  Șterge
+                </button>
+                <button
+                  className="ml-8 text-gray-500 font-semibold hover:text-gray-700"
+                  onClick={() => setDefaultAddress(address)}
+                  disabled={address.is_default}
+                >
+                  {address.is_default ? "Favorită" : "Setează ca Favorită"}
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
       <div className="flex justify-start space-x-4 mt-4">
         <button

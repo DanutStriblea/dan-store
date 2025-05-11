@@ -138,9 +138,13 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
               >
                 Rating:
               </label>
-              <div id="rating" className="flex space-x-1">
+              <div id="rating" className="flex justify-between w-full">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <label key={star} htmlFor={`rating${star}`}>
+                  <label
+                    key={star}
+                    htmlFor={`rating${star}`}
+                    className="flex-1 text-center"
+                  >
                     <input
                       type="radio"
                       id={`rating${star}`}
@@ -151,9 +155,9 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
                       className="hidden"
                     />
                     <FaStar
-                      className={`w-6 h-6 cursor-pointer transition-transform duration-200 ${
+                      className={`w-full max-w-[1.5rem] h-auto gap 1 cursor-pointer transition-transform duration-200 ${
                         rating >= star ? "text-sky-700" : "text-gray-500"
-                      }`}
+                      } hover:scale-110`}
                     />
                   </label>
                 ))}

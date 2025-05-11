@@ -8,9 +8,12 @@ const AccountDropdown = () => {
   const [visible, setVisible] = useState(false);
   // Starea care decide dacă dropdown-ul va fi renderizat (pentru a permite tranziții)
   const [shouldRender, setShouldRender] = useState(false);
+  // Adăugăm starea pentru verificarea lățimii ecranului
+  const [enableHoverEffects, setEnableHoverEffects] = useState(
+    window.innerWidth >= 1600
+  );
   // Referință către timer pentru delay
   const timerRef = useRef(null);
-
   // Efect pentru a actualiza starea shouldRender în funcție de visible
   useEffect(() => {
     if (visible) {
@@ -24,8 +27,19 @@ const AccountDropdown = () => {
     }
   }, [visible]);
 
+  // Efect pentru a actualiza starea enableHoverEffects în funcție de lățimea ferestrei
+  useEffect(() => {
+    const handleResize = () => {
+      setEnableHoverEffects(window.innerWidth >= 1600); // Dezactivează hover effects sub 1600px
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   // Gestionează intrarea mouse-ului: anulează eventualul timer și arată dropdown-ul
   const handleMouseEnter = () => {
+    // Verificăm dacă efectele de hover sunt activate
+    if (!enableHoverEffects) return;
+
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -35,6 +49,9 @@ const AccountDropdown = () => {
 
   // Gestionează ieșirea mouse-ului: setează un timer de 0.3 secunde pentru a ascunde dropdown-ul
   const handleMouseLeave = () => {
+    // Verificăm dacă efectele de hover sunt activate
+    if (!enableHoverEffects) return;
+
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -60,9 +77,11 @@ const AccountDropdown = () => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Butonul "Contul Meu" */}
+      {/* Butonul "Contul Meu" */}{" "}
       <NavLink to="/myaccount">
-        <button className="flex items-center space-x-1 hover:text-gray-800 text-sm">
+        <button
+          className={`flex items-center space-x-1 ${enableHoverEffects ? "hover:text-gray-800" : ""} text-sm`}
+        >
           <FaUser className="w-4 h-4" />
           <span className="hidden lg:inline text-xs">Contul Meu</span>
         </button>
@@ -80,34 +99,37 @@ const AccountDropdown = () => {
               <NavLink
                 to="/myaccount"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm "
+                className={`block px-4 py-2 ${enableHoverEffects ? "hover:bg-slate-200" : ""} text-gray-600 text-sm`}
               >
                 Datele tale
               </NavLink>
             </li>
             <li>
+              {" "}
               <NavLink
                 to="/addresses"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm"
+                className={`block px-4 py-2 ${enableHoverEffects ? "hover:bg-slate-200" : ""} text-gray-600 text-sm`}
               >
                 Adrese
               </NavLink>
             </li>
             <li>
+              {" "}
               <NavLink
                 to="/orders"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm"
+                className={`block px-4 py-2 ${enableHoverEffects ? "hover:bg-slate-200" : ""} text-gray-600 text-sm`}
               >
                 Comenzi
               </NavLink>
             </li>
             <li>
+              {" "}
               <NavLink
                 to="/returns"
                 onClick={handleLinkClick}
-                className="block px-4 py-2 hover:bg-slate-200 text-gray-600 text-sm"
+                className={`block px-4 py-2 ${enableHoverEffects ? "hover:bg-slate-200" : ""} text-gray-600 text-sm`}
               >
                 Retururi
               </NavLink>

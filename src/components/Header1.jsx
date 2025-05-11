@@ -23,15 +23,21 @@ const Header1 = ({ onSearch }) => {
   const [isCartHovered, setIsCartHovered] = useState(false);
   const [isFavoriteHovered, setIsFavoriteHovered] = useState(false);
   // Noua stare care determină dacă ecranul este de tip Desktop (full view)
+  // Modificat pragul pentru isDesktop la 1600px pentru hover effects
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [enableHoverEffects, setEnableHoverEffects] = useState(
+    window.innerWidth >= 1600
+  );
 
   // Ref pentru gestionarea timer-ului la hover al coșului
   const cartHoverTimerRef = useRef(null);
 
-  // Actualizarea stării isDesktop la redimensionarea ferestrei
+  // Actualizarea stării isDesktop și enableHoverEffects la redimensionarea ferestrei
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
+      const width = window.innerWidth;
+      setIsDesktop(width >= 1024);
+      setEnableHoverEffects(width >= 1600); // Dezactivează hover effects sub 1600px
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -143,7 +149,9 @@ const Header1 = ({ onSearch }) => {
                   ) : (
                     // Pentru mobile, afișăm un buton simplificat care navighează către "Contul Meu"
                     <NavLink to="/myaccount">
-                      <button className="flex items-center space-x-1 hover:text-gray-800 text-sm">
+                      <button
+                        className={`flex items-center space-x-1 ${enableHoverEffects ? "hover:text-gray-800" : ""} text-sm`}
+                      >
                         <FaUser className="w-4 h-4" />
                         <span className="hidden lg:inline text-xs">
                           Contul Meu
@@ -154,7 +162,9 @@ const Header1 = ({ onSearch }) => {
                 </>
               ) : (
                 <NavLink to="/login">
-                  <button className="flex items-center space-x-1 hover:text-gray-800 text-sm">
+                  <button
+                    className={`flex items-center space-x-1 ${enableHoverEffects ? "hover:text-gray-800" : ""} text-sm`}
+                  >
                     <FaUser className="w-4 h-4" />
                     <span className="hidden lg:inline text-xs">Log In</span>
                   </button>
@@ -165,19 +175,22 @@ const Header1 = ({ onSearch }) => {
             <div
               className="relative inline-block"
               onMouseEnter={() => {
-                if (isDesktop) {
+                if (enableHoverEffects) {
+                  // Folosim enableHoverEffects în loc de isDesktop
                   setIsFavoriteHovered(true);
                 }
               }}
               onMouseLeave={() => {
-                if (isDesktop) {
+                if (enableHoverEffects) {
+                  // Folosim enableHoverEffects în loc de isDesktop
                   setIsFavoriteHovered(false);
                 }
               }}
             >
+              {" "}
               <NavLink
                 to="/favorite"
-                className="relative flex items-center space-x-1 hover:text-gray-800 text-sm"
+                className={`relative flex items-center space-x-1 ${enableHoverEffects ? "hover:text-gray-800" : ""} text-sm`}
               >
                 <div className="relative">
                   <FaHeart className="w-4 h-4" />
@@ -189,14 +202,17 @@ const Header1 = ({ onSearch }) => {
                 </div>
                 <span className="hidden lg:inline text-xs">Favorite</span>
               </NavLink>
-              {isDesktop && <FavoritePopup forceVisible={isFavoriteHovered} />}
+              {isDesktop && enableHoverEffects && (
+                <FavoritePopup forceVisible={isFavoriteHovered} />
+              )}
             </div>
 
             {/* Zona Coș */}
             <div
               className="relative inline-block"
               onMouseEnter={() => {
-                if (isDesktop) {
+                if (enableHoverEffects) {
+                  // Folosim enableHoverEffects în loc de isDesktop
                   if (cartHoverTimerRef.current) {
                     clearTimeout(cartHoverTimerRef.current);
                     cartHoverTimerRef.current = null;
@@ -205,7 +221,8 @@ const Header1 = ({ onSearch }) => {
                 }
               }}
               onMouseLeave={() => {
-                if (isDesktop) {
+                if (enableHoverEffects) {
+                  // Folosim enableHoverEffects în loc de isDesktop
                   cartHoverTimerRef.current = setTimeout(() => {
                     setIsCartHovered(false);
                     cartHoverTimerRef.current = null;
@@ -215,7 +232,7 @@ const Header1 = ({ onSearch }) => {
             >
               <NavLink
                 to="/cart"
-                className="relative flex items-center space-x-1 hover:text-gray-800 text-sm"
+                className={`relative flex items-center space-x-1 ${enableHoverEffects ? "hover:text-gray-800" : ""} text-sm`}
               >
                 <div className="relative">
                   <FaShoppingCart className="w-4 h-4" />
@@ -227,7 +244,9 @@ const Header1 = ({ onSearch }) => {
                 </div>
                 <span className="hidden lg:inline text-xs">Coș</span>
               </NavLink>
-              {isDesktop && <CartPopup forceVisible={isCartHovered} />}
+              {isDesktop && enableHoverEffects && (
+                <CartPopup forceVisible={isCartHovered} />
+              )}
             </div>
           </div>
         </div>

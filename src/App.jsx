@@ -27,6 +27,7 @@ import OrderConfirmation from "./pages/OrderConfirmation"; // Ruta pentru confir
 import { AddressProvider } from "./context/AddressContext";
 import CartPopup from "./components/CartPopup"; // <-- Am adăugat această linie
 import Orders from "./pages/Orders";
+import Returns from "./pages/Returns"; // Import pagina de retururi
 import RequestResetPassword from "./components/RequestResetPassword"; // Importă componenta pentru gestionarea hash-ului
 
 function App() {
@@ -99,6 +100,10 @@ function App() {
                       <Route
                         path="orders"
                         element={<ProtectedRoute element={<Orders />} />}
+                      />
+                      <Route
+                        path="returns"
+                        element={<ProtectedRoute element={<Returns />} />}
                       />
                       <Route path="*" element={<NotFound />} />
                       {/* Ruta pentru gestionarea hash-ului primit de la Supabase */}

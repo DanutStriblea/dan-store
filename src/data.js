@@ -94,8 +94,8 @@ export const products = [
     ],
     title: "Ionut 8",
     description: "Descriere produs 8",
-    price: 300,
-    gender: "masculin",
+    price: 10,
+    gender: "feminin",
   },
   {
     id: uuidv4(),

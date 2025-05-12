@@ -292,7 +292,7 @@ const RegisterForm = () => {
 
         <p className="text-sm text-gray-600 mt-4">
           Prin crearea contului declar că am luat la cunoștință de principiile
-          prelucrării datelor și de termenii și condițiile.
+          prelucrării datelor și de termenii și condițiile dan-store.
         </p>
       </form>
     </div>

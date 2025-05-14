@@ -297,7 +297,7 @@ const UserAddresses = () => {
     localAddresses.length > 0 ? localAddresses : addresses;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-slate-200 rounded-lg shadow-md">
+    <div className="max-w-4xl mx-auto p-6 pb-5 bg-slate-200 rounded-lg shadow-md">
       <h1 className="text-2xl font-bold text-sky-900 mb-6">Adresele Mele</h1>
 
       {loading && !isSettingFavorite ? (
@@ -305,7 +305,7 @@ const UserAddresses = () => {
           <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent border-solid rounded-full animate-spin"></div>
         </div>
       ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
           {error}
         </div>
       ) : displayAddresses.length === 0 ? (
@@ -341,14 +341,14 @@ const UserAddresses = () => {
             .map((address) => (
               <div
                 key={address.id}
-                className={`bg-white rounded-lg shadow-md p-4 ${
+                className={`bg-white rounded-lg shadow-md p-4 pb-1.5 md:pb-5 ${
                   address.is_default
                     ? "border-l-4 border-r-4 border-sky-700"
                     : ""
                 }`}
               >
-                <div className="flex justify-between items-start">
-                  <div>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+                  <div className="mb-2 md:mb-0">
                     <div className="flex items-center mb-1">
                       <span className="font-semibold text-lg">
                         {address.name}
@@ -359,26 +359,28 @@ const UserAddresses = () => {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-700">{address.phone_number}</p>
-                    <p className="text-gray-600">
+                    <p className="text-gray-700 leading-snug">
+                      {address.phone_number}
+                    </p>
+                    <p className="text-gray-600 leading-snug">
                       {address.address}, {address.city}, {address.county}
                     </p>
                   </div>
-                  <div className="flex space-x-3 ">
+                  <div className="flex space-x-3 pt-1 md:pt-0 border-t md:border-t-0 mt-1 md:mt-0 mb-1 md:mb-0">
                     <button
-                      className="text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md mb-2 hover:bg-blue-50"
+                      className="text-blue-600 hover:text-blue-800 transition-colors px-2 py-0.5 md:py-1 rounded-md hover:bg-blue-50"
                       onClick={() => openEditPopup(address)}
                     >
                       Editează
                     </button>
                     <button
-                      className="text-red-600 hover:text-red-800 transition-colors px-2 py-1 rounded-md mb-2 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-800 transition-colors px-2 py-0.5 md:py-1 rounded-md hover:bg-red-50"
                       onClick={() => openDeleteModal(address)}
                     >
                       Șterge
                     </button>
                     <button
-                      className={`transition-all px-2 py-1 rounded-md ${
+                      className={`transition-all px-2 py-0.5 md:py-1 rounded-md ${
                         address.is_default ? "text-sky-800" : "text-gray-400"
                       }`}
                       onClick={(e) => {
@@ -395,7 +397,7 @@ const UserAddresses = () => {
                       }
                     >
                       <span
-                        className="inline-flex items-center justify-center transition-transform duration-200 hover:scale-125"
+                        className="inline-flex items-center justify-center mt-2 transition-transform duration-200 hover:scale-125"
                         style={{
                           width: "20px",
                           height: "20px",

@@ -292,7 +292,14 @@ const CartProvider = ({ children }) => {
     if (error) {
       console.error("Error updating quantity:", error);
     } else {
-      await loadCart();
+      // Update only the specific item in the cart state instead of reloading all cart items
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.product_id === productId
+            ? { ...item, quantity, product_price: newProductPrice }
+            : item
+        )
+      );
     }
   };
 

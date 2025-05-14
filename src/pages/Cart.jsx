@@ -117,7 +117,7 @@ const Cart = () => {
                         />
 
                         <button
-                          className="bg-red-600 text-white px-2 py-2 rounded-md transform transition duration-250 hover:bg-red-700 active:scale-105 active:bg-red-800 w-24 sm:w-auto"
+                          className="bg-red-600 text-white px-2.5 py-1.5 rounded-md transform transition duration-250 hover:bg-red-700 active:scale-105 active:bg-red-800 w-22 sm:w-auto"
                           onClick={() => handleRemoveFromCart(item.product_id)}
                         >
                           Șterge

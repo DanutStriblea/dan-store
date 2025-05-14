@@ -1,50 +1,57 @@
 import PropTypes from "prop-types";
 import { useState, useEffect } from "react";
-import { FaSyncAlt } from "react-icons/fa";
+import { FaMinus, FaPlus } from "react-icons/fa";
 
 const QuantitySelector = ({ id, initialQuantity = 1, onQuantityChange }) => {
   const [quantity, setQuantity] = useState(initialQuantity);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   // 🔄 Sincronizăm valoarea inițială când se schimbă `initialQuantity`
   useEffect(() => {
     setQuantity(initialQuantity);
   }, [initialQuantity]);
 
-  const handleQuantityChange = (e) => {
-    const newQuantity = Number(e.target.value);
+  const updateQuantityWithAnimation = (newQuantity) => {
     if (newQuantity >= 1 && newQuantity <= 100) {
       setQuantity(newQuantity);
-      onQuantityChange(id, newQuantity); // Actualizăm cantitatea în `Cart.jsx`
-      setIsUpdating(true);
-      setTimeout(() => {
-        setIsUpdating(false);
-      }, 500);
+      onQuantityChange(id, newQuantity); // Important: Pass the correct id
     }
+  };
+
+  const handleDecrement = () => {
+    updateQuantityWithAnimation(quantity - 1);
+  };
+
+  const handleIncrement = () => {
+    updateQuantityWithAnimation(quantity + 1);
   };
 
   return (
     <div className="flex items-center">
-      <label
-        htmlFor={`quantity-select-${id}`}
-        className="text-sm text-gray-700 mr-2"
-      >
-        Cantitate:
-      </label>
-      <select
-        id={`quantity-select-${id}`}
-        name={`quantity-${id}`}
-        value={quantity}
-        onChange={handleQuantityChange}
-        className="w-14 p-2 border rounded-md bg-gray-100"
-      >
-        {Array.from({ length: 100 }, (_, i) => i + 1).map((num) => (
-          <option key={num} value={num}>
-            {num}
-          </option>
-        ))}
-      </select>
-      {isUpdating && <FaSyncAlt className="ml-2 text-blue-500 animate-spin" />}
+      <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={quantity <= 1}
+          className="px-2 py-2.5 bg-white hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Scade cantitatea"
+        >
+          <FaMinus size={12} />
+        </button>
+
+        <div className="w-10 px-1 py-1 text-center bg-white">
+          <span className="font-medium">{quantity}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={quantity >= 100}
+          className="px-2 py-2.5 bg-white hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Crește cantitatea"
+        >
+          <FaPlus size={12} />
+        </button>
+      </div>
     </div>
   );
 };

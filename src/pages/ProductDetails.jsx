@@ -210,7 +210,7 @@ const ProductDetails = () => {
                 ? "bg-red-600 hover:bg-red-700 active:bg-red-800"
                 : "bg-sky-900 hover:bg-sky-800 active:bg-sky-700"
             } text-white px-3 py-2 rounded-md transform transition duration-250 active:scale-105 mt-4`}
-            style={{ width: "65%" }}
+            style={{ width: "45%" }}
             onClick={handleCartClick}
           >
             {isInCart ? "Șterge din coș" : "Adaugă în coș"}

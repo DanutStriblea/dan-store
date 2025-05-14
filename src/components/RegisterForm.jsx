@@ -52,6 +52,18 @@ const RegisterForm = () => {
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
+
+    // Resetăm eroarea și chenarul roșu când utilizatorul modifică o parolă
+    if (name === "password" || name === "confirmPassword") {
+      if (error === "Parolele nu coincid!") {
+        setError(null);
+        setFieldErrors((prev) => ({
+          ...prev,
+          password: false,
+          confirmPassword: false,
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -115,6 +127,12 @@ const RegisterForm = () => {
     }
     if (password !== confirmPassword) {
       setError("Parolele nu coincid!");
+      // Adăugăm chenar roșu în jurul ambelor câmpuri de parolă
+      setFieldErrors({
+        ...newFieldErrors,
+        password: true,
+        confirmPassword: true,
+      });
       setLoading(false);
       return;
     }
@@ -312,7 +330,9 @@ const RegisterForm = () => {
             </div>
             {fieldErrors.password && (
               <p className="text-red-500 text-xs mt-1">
-                Acest câmp este obligatoriu
+                {error === "Parolele nu coincid!"
+                  ? "Parolele nu coincid!"
+                  : "Acest câmp este obligatoriu"}
               </p>
             )}
           </div>
@@ -351,7 +371,9 @@ const RegisterForm = () => {
             </div>
             {fieldErrors.confirmPassword && (
               <p className="text-red-500 text-xs mt-1">
-                Acest câmp este obligatoriu
+                {error === "Parolele nu coincid!"
+                  ? "Parolele nu coincid!"
+                  : "Acest câmp este obligatoriu"}
               </p>
             )}
           </div>

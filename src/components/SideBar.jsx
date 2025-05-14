@@ -71,7 +71,7 @@ const SideBar = ({ isSidebarOpen, toggleSidebar }) => {
         <div className="relative z-10 h-full">
           {/* Butonul de închidere pentru mobile */}
           <button
-            className="absolute -top-2 right-0 md:hidden text-xl text-gray-700 hover:text-gray-900"
+            className="absolute -top-2 right-1 md:hidden text-xl text-gray-400 hover:text-gray-700"
             onClick={toggleSidebar}
           >
             ✕

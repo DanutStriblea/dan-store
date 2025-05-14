@@ -28,6 +28,7 @@ import { AddressProvider } from "./context/AddressContext";
 import CartPopup from "./components/CartPopup"; // <-- Am adăugat această linie
 import Orders from "./pages/Orders";
 import Returns from "./pages/Returns"; // Import pagina de retururi
+import YourCards from "./pages/YourCards"; // Import pagina de carduri
 import RequestResetPassword from "./components/RequestResetPassword"; // Importă componenta pentru gestionarea hash-ului
 
 function App() {
@@ -104,6 +105,10 @@ function App() {
                       <Route
                         path="returns"
                         element={<ProtectedRoute element={<Returns />} />}
+                      />
+                      <Route
+                        path="your-cards"
+                        element={<ProtectedRoute element={<YourCards />} />}
                       />
                       <Route path="*" element={<NotFound />} />
                       {/* Ruta pentru gestionarea hash-ului primit de la Supabase */}

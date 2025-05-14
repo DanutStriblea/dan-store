@@ -103,7 +103,7 @@ const AccountDropdown = () => {
               >
                 Datele tale
               </NavLink>
-            </li>
+            </li>{" "}
             <li>
               {" "}
               <NavLink
@@ -112,6 +112,16 @@ const AccountDropdown = () => {
                 className={`block px-4 py-2 ${enableHoverEffects ? "hover:bg-slate-200" : ""} text-gray-600 text-sm`}
               >
                 Adrese
+              </NavLink>
+            </li>
+            <li>
+              {" "}
+              <NavLink
+                to="/your-cards"
+                onClick={handleLinkClick}
+                className={`block px-4 py-2 ${enableHoverEffects ? "hover:bg-slate-200" : ""} text-gray-600 text-sm`}
+              >
+                Carduri
               </NavLink>
             </li>
             <li>

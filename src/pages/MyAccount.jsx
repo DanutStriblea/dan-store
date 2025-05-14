@@ -96,6 +96,23 @@ const MyAccount = () => {
         </p>
       </div>
 
+      {/* Card Cardurile Tale */}
+      <div
+        className="mb-6 border rounded-lg p-4 shadow-md bg-white text-gray-600 transition duration-200 cursor-pointer"
+        style={{
+          transform: "scale(1)",
+          transition: "transform 200ms ease",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+        onClick={() => navigate("/your-cards")} // Adăugare navigare
+      >
+        <h2 className="text-xl font-semibold">Cardurile Tale</h2>
+        <p className="text-sm">
+          Gestionează cardurile tale salvate pentru plăți.
+        </p>
+      </div>
+
       {/* Card Comenzi */}
       <div
         className="mb-6 border rounded-lg p-4 shadow-md bg-white text-gray-600 transition duration-200 cursor-pointer"

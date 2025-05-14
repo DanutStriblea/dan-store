@@ -150,7 +150,7 @@ const RegisterForm = () => {
         />
         <button
           onClick={handleClose}
-          className="absolute top-3 right-4 text-gray-600 text-3xl hover:text-gray-800"
+          className="absolute top-2 right-4 text-gray-600 text-3xl hover:text-gray-800"
         >
           ×
         </button>

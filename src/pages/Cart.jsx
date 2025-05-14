@@ -147,13 +147,15 @@ const Cart = () => {
                   to="/"
                   className="bg-sky-900 text-white px-3 py-2 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-full sm:w-auto mb-4 sm:mb-0 text-center"
                 >
-                  Înapoi la cumpărături
+                  <span className="mr-1">←</span> Înapoi la cumpărături
+                  <span className="mr-1"></span>
                 </Link>
                 <button
                   onClick={handleContinueOrder}
                   className="bg-sky-900 text-white px-3 py-2 rounded-md transform transition duration-250 hover:bg-sky-800 active:scale-105 active:bg-sky-700 w-full sm:w-auto"
                 >
-                  Continua comanda
+                  <span className="ml-1"></span>Continua comanda{" "}
+                  <span className="ml-1">→</span>
                 </button>
               </div>
             </div>

@@ -14,11 +14,21 @@ const RegisterForm = () => {
     subscribe: false, // Adăugăm câmp pentru checkbox-ul de abonare
   });
 
+  const [fieldErrors, setFieldErrors] = useState({
+    firstName: false,
+    lastName: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+    phone: false,
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +60,16 @@ const RegisterForm = () => {
     setLoading(true);
     setSuccessMessage("");
 
+    // Reset field errors
+    const newFieldErrors = {
+      firstName: false,
+      lastName: false,
+      email: false,
+      password: false,
+      confirmPassword: false,
+      phone: false,
+    };
+
     const {
       email,
       password,
@@ -60,8 +80,36 @@ const RegisterForm = () => {
       subscribe,
     } = formData;
 
-    if (!email || !password || !firstName || !lastName) {
-      setError("Toate câmpurile sunt obligatorii!");
+    // Validare pentru fiecare câmp
+    let hasErrors = false;
+    if (!firstName) {
+      newFieldErrors.firstName = true;
+      hasErrors = true;
+    }
+    if (!lastName) {
+      newFieldErrors.lastName = true;
+      hasErrors = true;
+    }
+    if (!email) {
+      newFieldErrors.email = true;
+      hasErrors = true;
+    }
+    if (!password) {
+      newFieldErrors.password = true;
+      hasErrors = true;
+    }
+    if (!confirmPassword) {
+      newFieldErrors.confirmPassword = true;
+      hasErrors = true;
+    }
+    if (!phone) {
+      newFieldErrors.phone = true;
+      hasErrors = true;
+    }
+
+    setFieldErrors(newFieldErrors);
+
+    if (hasErrors) {
       setLoading(false);
       return;
     }
@@ -98,7 +146,9 @@ const RegisterForm = () => {
       setSuccessMessage(
         "Contul a fost creat cu succes! Verificați emailul pentru confirmare."
       );
+      setShowSuccessPopup(true);
       setTimeout(() => {
+        setShowSuccessPopup(false);
         navigate("/login");
       }, 4000);
     } catch (err) {
@@ -110,6 +160,12 @@ const RegisterForm = () => {
       } else {
         setError(err.message);
       }
+      // Arătăm popup-ul de eroare
+      setShowErrorPopup(true);
+      // Setăm un timer pentru a închide popup-ul după 4 secunde
+      setTimeout(() => {
+        setShowErrorPopup(false);
+      }, 4000);
     } finally {
       setLoading(false);
     }
@@ -161,9 +217,6 @@ const RegisterForm = () => {
         <h2 className="text-2xl font-bold text-center mb-1">Înregistrare</h2>
 
         {error && <p className="text-red-600 text-center mb-4">{error}</p>}
-        {successMessage && (
-          <p className="text-green-600 text-center mb-4">{successMessage}</p>
-        )}
 
         <div className="space-y-2">
           <div>
@@ -177,9 +230,15 @@ const RegisterForm = () => {
               value={formData.firstName}
               onChange={handleChange}
               autoComplete="off"
-              className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={`w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                fieldErrors.firstName ? "border-red-500" : ""
+              }`}
             />
+            {fieldErrors.firstName && (
+              <p className="text-red-500 text-xs mt-1">
+                Acest câmp este obligatoriu
+              </p>
+            )}
           </div>
 
           <div>
@@ -193,9 +252,15 @@ const RegisterForm = () => {
               value={formData.lastName}
               onChange={handleChange}
               autoComplete="off"
-              className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={`w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                fieldErrors.lastName ? "border-red-500" : ""
+              }`}
             />
+            {fieldErrors.lastName && (
+              <p className="text-red-500 text-xs mt-1">
+                Acest câmp este obligatoriu
+              </p>
+            )}
           </div>
 
           <div>
@@ -209,9 +274,15 @@ const RegisterForm = () => {
               value={formData.email}
               onChange={handleChange}
               autoComplete="off"
-              className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={`w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                fieldErrors.email ? "border-red-500" : ""
+              }`}
             />
+            {fieldErrors.email && (
+              <p className="text-red-500 text-xs mt-1">
+                Acest câmp este obligatoriu
+              </p>
+            )}
           </div>
 
           <div>
@@ -226,17 +297,24 @@ const RegisterForm = () => {
                 value={formData.password}
                 onChange={handleChange}
                 autoComplete="off"
-                className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                className={`w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  fieldErrors.password ? "border-red-500" : ""
+                }`}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
                 onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1"
               >
                 {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
               </button>
             </div>
+            {fieldErrors.password && (
+              <p className="text-red-500 text-xs mt-1">
+                Acest câmp este obligatoriu
+              </p>
+            )}
           </div>
 
           <div>
@@ -254,13 +332,15 @@ const RegisterForm = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 autoComplete="off"
-                className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                className={`w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  fieldErrors.confirmPassword ? "border-red-500" : ""
+                }`}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                tabIndex="-1"
               >
                 {showConfirmPassword ? (
                   <FaEyeSlash size={16} />
@@ -269,6 +349,11 @@ const RegisterForm = () => {
                 )}
               </button>
             </div>
+            {fieldErrors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1">
+                Acest câmp este obligatoriu
+              </p>
+            )}
           </div>
 
           <div>
@@ -282,8 +367,15 @@ const RegisterForm = () => {
               value={formData.phone}
               onChange={handleChange}
               autoComplete="off"
-              className="w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                fieldErrors.phone ? "border-red-500" : ""
+              }`}
             />
+            {fieldErrors.phone && (
+              <p className="text-red-500 text-xs mt-1">
+                Acest câmp este obligatoriu
+              </p>
+            )}
           </div>
 
           {/* Checkbox pentru abonare */}
@@ -315,11 +407,73 @@ const RegisterForm = () => {
           </button>
         </div>
 
-        <p className="text-sm text-gray-600 mt-4">
+        <p className="text-xs text-gray-400 mt-4">
           Prin crearea contului declar că am luat la cunoștință de principiile
           prelucrării datelor și de termenii și condițiile dan-store.
         </p>
       </form>
+
+      {/* Popup de succes */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/30">
+          <div className="bg-white rounded-lg p-6 shadow-2xl max-w-md mx-4 border-l-4 border-green-500 transform animate-fadeIn">
+            <div className="flex items-center">
+              <div className="bg-green-100 rounded-full p-2 mr-4">
+                <svg
+                  className="h-8 w-8 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Înregistrare reușită!
+                </h3>
+                <p className="text-sm text-gray-600">{successMessage}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup */}
+      {showErrorPopup && error && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/30">
+          <div className="bg-white rounded-lg p-6 shadow-2xl max-w-md mx-4 border-l-4 border-red-500 transform animate-fadeIn">
+            <div className="flex items-center">
+              <div className="bg-red-100 rounded-full p-2 mr-4">
+                <svg
+                  className="h-8 w-8 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Eroare la înregistrare
+                </h3>
+                <p className="text-sm text-gray-600">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

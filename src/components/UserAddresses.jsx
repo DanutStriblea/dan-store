@@ -124,6 +124,9 @@ const UserAddresses = () => {
         localStorage.removeItem("selected_billing_address_id");
         sessionStorage.removeItem("cached_addresses");
 
+        // Actualizăm starea locală imediat pentru a reflecta că nu mai avem adrese
+        setLocalAddresses([]);
+
         // Actualizăm și order_details dacă există
         const orderId = localStorage.getItem("tempOrderId");
         if (orderId) {
@@ -135,6 +138,14 @@ const UserAddresses = () => {
             })
             .eq("id", orderId);
         }
+
+        // Notificăm componentele că adresa a fost ștearsă
+        const deleteEvent = new CustomEvent("address-deleted", {
+          detail: {
+            addressId: addressToDelete.id,
+          },
+        });
+        window.dispatchEvent(deleteEvent);
       } else {
         // Dacă era adresa favorită, setăm o nouă favorită
         if (addressToDelete.is_default) {
@@ -210,10 +221,13 @@ const UserAddresses = () => {
         }
       }
 
+      // Actualizăm starea locală imediat pentru a reflecta schimbarea
+      setLocalAddresses(remainingAddresses);
+
       // Ștergem eventualele erori anterioare
       setError(null);
 
-      // Actualizăm lista de adrese
+      // Actualizăm lista de adrese în context
       await fetchAddresses();
     } catch (err) {
       console.error("Eroare la ștergerea adresei:", err);
@@ -271,6 +285,18 @@ const UserAddresses = () => {
           throw updateError;
         }
       }
+
+      // Actualizăm localStorage pentru a fi folosit de DeliveryMethod
+      localStorage.setItem("selected_delivery_address_id", address.id);
+
+      // Notificăm alte componente despre schimbarea adresei favorite
+      const updateEvent = new CustomEvent("address-updated", {
+        detail: {
+          oldAddressId: null,
+          newAddress: address,
+        },
+      });
+      window.dispatchEvent(updateEvent);
 
       // Curățăm erorile existente
       setError(null);

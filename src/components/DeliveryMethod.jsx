@@ -60,16 +60,34 @@ const DeliveryMethod = ({ orderId, deliveryMethod, setDeliveryMethod }) => {
   useEffect(() => {
     const handleAddressUpdate = (event) => {
       const { oldAddressId, newAddress } = event.detail;
+
+      // Dacă primim un eveniment de actualizare pentru adresa favorită (oldAddressId este null)
+      if (oldAddressId === null && newAddress?.is_default) {
+        // Actualizăm adresa de livrare cu noua adresă favorită
+        setDeliveryAddress(newAddress, orderId);
+        return;
+      }
+
       // Dacă adresa actualizată este aceeași cu adresa de livrare, o actualizăm
       if (deliveryAddress && deliveryAddress.id === oldAddressId) {
         setDeliveryAddress(newAddress, orderId);
       }
     };
 
+    const handleAddressDeleted = (event) => {
+      const { addressId } = event.detail;
+      if (deliveryAddress && deliveryAddress.id === addressId) {
+        // Dacă adresa ștearsă era adresa curentă de livrare, resetăm
+        setDeliveryAddress(null, orderId);
+      }
+    };
+
     window.addEventListener("address-updated", handleAddressUpdate);
+    window.addEventListener("address-deleted", handleAddressDeleted);
 
     return () => {
       window.removeEventListener("address-updated", handleAddressUpdate);
+      window.removeEventListener("address-deleted", handleAddressDeleted);
     };
   }, [deliveryAddress, setDeliveryAddress, orderId]);
 

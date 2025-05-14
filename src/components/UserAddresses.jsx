@@ -4,19 +4,66 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import EditAddressPopup from "./EditAddressPopup";
 import AddNewAddress from "./AddNewAddress";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 const UserAddresses = () => {
   const { addresses, fetchAddresses } = useContext(AddressContext);
+  const [localAddresses, setLocalAddresses] = useState([]);
   const [editingAddress, setEditingAddress] = useState(null);
   const [showEditPopup, setShowEditPopup] = useState(false);
-  const [deleteModal, setDeleteModal] = useState(false); // Controlăm vizibilitatea pop-up-ului de ștergere
-  const [addressToDelete, setAddressToDelete] = useState(null); // Adresa care urmează să fie ștearsă
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSettingFavorite, setIsSettingFavorite] = useState(false);
+
+  // Actualizăm localAddresses când se schimbă addresses din context
+  useEffect(() => {
+    if (addresses && addresses.length > 0 && !isSettingFavorite) {
+      setLocalAddresses(addresses);
+    }
+  }, [addresses, isSettingFavorite]);
 
   const navigate = useNavigate();
 
+  const animateHeartIcon = (iconElement) => {
+    if (iconElement) {
+      // Prima fază: scale la 1.1 în 150ms
+      iconElement.style.transition = "transform 0.15s ease-out";
+      iconElement.style.transform = "scale(1.1)";
+
+      setTimeout(() => {
+        // A doua fază: scale la 0.9 după 150ms
+        iconElement.style.transform = "scale(0.9)";
+      }, 150);
+
+      setTimeout(() => {
+        // A treia fază: scale la 1.2 după 300ms
+        iconElement.style.transform = "scale(1.2)";
+      }, 300);
+
+      setTimeout(() => {
+        // Revenire: scale la 1 după 600ms
+        iconElement.style.transform = "scale(1)";
+      }, 600);
+    }
+  };
+
   // Reîmprospătăm lista de adrese la montarea paginii
   useEffect(() => {
-    fetchAddresses(); // Actualizăm lista atunci când componenta se încarcă
+    const loadAddresses = async () => {
+      setLoading(true);
+      try {
+        await fetchAddresses();
+      } catch (err) {
+        console.error("Eroare la încărcarea adreselor:", err);
+        setError("Nu am putut încărca adresele. Te rugăm să încerci din nou.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAddresses();
   }, [fetchAddresses]);
 
   const openEditPopup = (address = null) => {
@@ -42,30 +89,33 @@ const UserAddresses = () => {
   const deleteAddress = async () => {
     if (!addressToDelete) return;
 
-    // Verificăm dacă adresa pe care o ștergem este setată ca adresă de livrare sau facturare
-    const deliveryAddressId = localStorage.getItem(
-      "selected_delivery_address_id"
-    );
-    const billingAddressId = localStorage.getItem(
-      "selected_billing_address_id"
-    );
-    const isSelectedForDelivery = deliveryAddressId === addressToDelete.id;
-    const isSelectedForBilling = billingAddressId === addressToDelete.id;
+    try {
+      // Verificăm dacă adresa pe care o ștergem este setată ca adresă de livrare sau facturare
+      const deliveryAddressId = localStorage.getItem(
+        "selected_delivery_address_id"
+      );
+      const billingAddressId = localStorage.getItem(
+        "selected_billing_address_id"
+      );
+      const isSelectedForDelivery = deliveryAddressId === addressToDelete.id;
+      const isSelectedForBilling = billingAddressId === addressToDelete.id;
 
-    const { error } = await supabase
-      .from("user_addresses")
-      .delete()
-      .eq("id", addressToDelete.id);
+      const { error } = await supabase
+        .from("user_addresses")
+        .delete()
+        .eq("id", addressToDelete.id);
 
-    if (!error) {
+      if (error) {
+        throw error;
+      }
+
       // Obținem adresele rămase
-      const { data: remainingAddresses, fetchError } = await supabase
+      const { data: remainingAddresses, error: fetchError } = await supabase
         .from("user_addresses")
         .select("*");
 
       if (fetchError) {
-        console.error("Eroare la verificarea adreselor rămase:", fetchError);
-        return;
+        throw fetchError;
       }
 
       // Dacă nu mai avem adrese, curățăm localStorage și order_details
@@ -160,15 +210,35 @@ const UserAddresses = () => {
         }
       }
 
-      fetchAddresses(); // Reîmprospătăm lista de adrese
-      closeDeleteModal(); // Închidem pop-up-ul
-    } else {
-      console.error("Eroare la ștergerea adresei:", error);
+      // Ștergem eventualele erori anterioare
+      setError(null);
+
+      // Actualizăm lista de adrese
+      await fetchAddresses();
+    } catch (err) {
+      console.error("Eroare la ștergerea adresei:", err);
+      setError("Nu am putut șterge adresa. Te rugăm să încerci din nou.");
+    } finally {
+      // Închidem pop-up-ul indiferent de rezultat
+      closeDeleteModal();
     }
   };
 
   const setDefaultAddress = async (address) => {
+    if (address.is_default) return; // Evităm să procesăm dacă adresa este deja favorită
+
     try {
+      // Aplicăm schimbarea locală pentru afișare imediată
+      setLocalAddresses((currentAddresses) =>
+        currentAddresses.map((addr) => ({
+          ...addr,
+          is_default: addr.id === address.id,
+        }))
+      );
+
+      // Setăm flag-ul ca să știm că suntem în procesul de schimbare
+      setIsSettingFavorite(true);
+
       // Resetăm toate adresele favorite
       const { error: resetError } = await supabase
         .from("user_addresses")
@@ -176,8 +246,7 @@ const UserAddresses = () => {
         .eq("user_id", address.user_id);
 
       if (resetError) {
-        console.error("Eroare la resetarea adreselor favorite:", resetError);
-        return;
+        throw resetError;
       }
 
       // Setăm adresa selectată ca favorită
@@ -187,8 +256,7 @@ const UserAddresses = () => {
         .eq("id", address.id);
 
       if (setDefaultError) {
-        console.error("Eroare la setarea adresei favorite:", setDefaultError);
-        return;
+        throw setDefaultError;
       }
 
       // Actualizăm `delivery_address_id` în `order_details`
@@ -200,18 +268,23 @@ const UserAddresses = () => {
           .eq("id", orderId);
 
         if (updateError) {
-          console.error(
-            "Eroare la actualizarea delivery_address_id:",
-            updateError
-          );
-        } else {
-          console.log("delivery_address_id actualizat cu succes:", address.id);
+          throw updateError;
         }
       }
 
-      await fetchAddresses(); // Reîmprospătăm lista globală de adrese
-    } catch (error) {
-      console.error("Eroare neașteptată:", error);
+      // Curățăm erorile existente
+      setError(null);
+
+      // Actualizăm în fundal datele din context
+      await fetchAddresses();
+    } catch (err) {
+      console.error("Eroare la setarea adresei favorite:", err);
+      setError(
+        "Nu am putut seta adresa ca favorită. Te rugăm să încerci din nou."
+      );
+    } finally {
+      // Resetăm flag-ul indiferent de rezultat
+      setIsSettingFavorite(false);
     }
   };
 
@@ -219,80 +292,147 @@ const UserAddresses = () => {
     navigate("/MyAccount");
   };
 
+  // Folosim adresele din context doar dacă localAddresses este gol
+  const displayAddresses =
+    localAddresses.length > 0 ? localAddresses : addresses;
+
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Adresele Mele</h2>
-      <div className="mb-4 pr-0 md:pr-4 lg:pr-[50%]">
-        {/* Sortăm adresele: favorita prima, restul în ordine cronologică */}
-        {[...addresses]
-          .sort((a, b) => {
-            // Dacă una dintre adrese este favorită, aceasta va fi prima
-            if (a.is_default) return -1;
-            if (b.is_default) return 1;
+    <div className="max-w-4xl mx-auto p-6 bg-slate-200 rounded-lg shadow-md">
+      <h1 className="text-2xl font-bold text-sky-900 mb-6">Adresele Mele</h1>
 
-            // Pentru celelalte adrese, le ordonăm cronologic (după ID sau created_at dacă există)
-            // Presupunem că ID-urile sau created_at sunt crescătoare (adică valorile mai mici sunt mai vechi)
-            if (a.created_at && b.created_at) {
-              return new Date(a.created_at) - new Date(b.created_at);
-            }
+      {loading && !isSettingFavorite ? (
+        <div className="flex justify-center py-8">
+          <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent border-solid rounded-full animate-spin"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      ) : displayAddresses.length === 0 ? (
+        <div className="bg-white p-6 rounded-lg shadow-md text-center">
+          <p className="text-gray-600 mb-4">Nu ai nicio adresă salvată.</p>
+          <p className="text-sm text-gray-500">
+            Adaugă o adresă nouă pentru a finaliza comenzile mai rapid.
+          </p>
+          <button
+            className="mt-4 bg-sky-900 hover:bg-sky-800 active:bg-sky-700 text-white px-3 py-2 rounded-md transform transition duration-250 active:scale-105"
+            onClick={() => openEditPopup()}
+          >
+            Adaugă Adresă
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Sortăm adresele: favorita prima, restul în ordine cronologică */}
+          {[...displayAddresses]
+            .sort((a, b) => {
+              // Dacă una dintre adrese este favorită, aceasta va fi prima
+              if (a.is_default) return -1;
+              if (b.is_default) return 1;
 
-            // Fallback la sortare după ID dacă nu există timestamp
-            return a.id.localeCompare(b.id);
-          })
-          .map((address) => (
-            <div
-              key={address.id}
-              className={`border rounded-lg p-4 mb-4 bg-gray-100 shadow-md hover:shadow-lg transition-shadow duration-300 ${
-                address.is_default ? "bg-slate-300" : ""
-              }`}
-            >
-              <p>
-                <strong>Nume:</strong> {address.name}
-              </p>
-              <p>
-                <strong>Telefon:</strong> {address.phone_number}
-              </p>
-              <p>
-                <strong>Adresă:</strong> {address.address}, {address.city},{" "}
-                {address.county}
-              </p>
-              <div className="flex mt-4">
-                <button
-                  className="text-blue-500 hover:text-blue-700 mr-4"
-                  onClick={() => openEditPopup(address)}
-                >
-                  Editează
-                </button>
-                <button
-                  className="text-red-500 hover:text-red-700 ml-4"
-                  onClick={() => openDeleteModal(address)}
-                >
-                  Șterge
-                </button>
-                <button
-                  className="ml-8 text-gray-500 font-semibold hover:text-gray-700"
-                  onClick={() => setDefaultAddress(address)}
-                  disabled={address.is_default}
-                >
-                  {address.is_default ? "Favorită" : "Setează ca Favorită"}
-                </button>
+              // Pentru celelalte adrese, le ordonăm cronologic
+              if (a.created_at && b.created_at) {
+                return new Date(a.created_at) - new Date(b.created_at);
+              }
+
+              // Fallback la sortare după ID dacă nu există timestamp
+              return a.id.localeCompare(b.id);
+            })
+            .map((address) => (
+              <div
+                key={address.id}
+                className={`bg-white rounded-lg shadow-md p-4 ${
+                  address.is_default
+                    ? "border-l-4 border-r-4 border-sky-700"
+                    : ""
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center mb-1">
+                      <span className="font-semibold text-lg">
+                        {address.name}
+                      </span>
+                      {address.is_default && (
+                        <span className="ml-2 bg-sky-100 text-sky-800 text-xs px-2 py-0.5 rounded-full">
+                          Favorită
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-700">{address.phone_number}</p>
+                    <p className="text-gray-600">
+                      {address.address}, {address.city}, {address.county}
+                    </p>
+                  </div>
+                  <div className="flex space-x-3 ">
+                    <button
+                      className="text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded-md mb-2 hover:bg-blue-50"
+                      onClick={() => openEditPopup(address)}
+                    >
+                      Editează
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-800 transition-colors px-2 py-1 rounded-md mb-2 hover:bg-red-50"
+                      onClick={() => openDeleteModal(address)}
+                    >
+                      Șterge
+                    </button>
+                    <button
+                      className={`transition-all px-2 py-1 rounded-md ${
+                        address.is_default ? "text-sky-800" : "text-gray-400"
+                      }`}
+                      onClick={(e) => {
+                        if (!address.is_default) {
+                          animateHeartIcon(
+                            e.currentTarget.querySelector("svg")
+                          );
+                          setDefaultAddress(address);
+                        }
+                      }}
+                      disabled={address.is_default}
+                      title={
+                        address.is_default ? "Favorită" : "Setează ca favorită"
+                      }
+                    >
+                      <span
+                        className="inline-flex items-center justify-center transition-transform duration-200 hover:scale-125"
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          overflow: "hidden",
+                          transformOrigin: "center",
+                        }}
+                      >
+                        {address.is_default ? (
+                          <FaHeart className="w-full h-full" />
+                        ) : (
+                          <FaRegHeart className="w-full h-full" />
+                        )}
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-      </div>
-      <div className="flex justify-start space-x-4 mt-4">
+            ))}
+        </div>
+      )}
+
+      <div className="mt-6 flex justify-between">
         <button
-          className="bg-sky-900 hover:bg-sky-800 active:bg-sky-700 text-white px-2 py-2 rounded-md transform transition duration-250 active:scale-105 w-28 flex items-center justify-center"
           onClick={navigateToAccount}
+          className="bg-sky-900 hover:bg-sky-800 active:bg-sky-700 text-white px-4 py-2 rounded-md transform transition duration-250 active:scale-105 flex items-center"
         >
-          <span className="mr-2">←</span> Înapoi
+          <span className="mr-2">←</span> Înapoi la cont
         </button>
-        <button
-          className="bg-sky-900 hover:bg-sky-800 active:bg-sky-700 text-white px-3 py-2 rounded-md transform transition duration-250 active:scale-105 w-40 min-w-40"
-          onClick={() => openEditPopup()} // Fără parametru => adăugare adresă nouă
-        >
-          Adaugă Adresă
-        </button>
+
+        {displayAddresses.length > 0 && (
+          <button
+            className="bg-sky-900 hover:bg-sky-800 active:bg-sky-700 text-white px-4 py-2 rounded-md transform transition duration-250 active:scale-105"
+            onClick={() => openEditPopup()}
+          >
+            Adaugă Adresă
+          </button>
+        )}
       </div>
 
       {showEditPopup &&
@@ -315,22 +455,30 @@ const UserAddresses = () => {
           />
         ))}
 
-      {deleteModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">
-              Ești sigur că vrei să ștergi această adresă?
+      {deleteModal && addressToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Confirmare ștergere adresă
             </h3>
-            <div className="flex justify-end">
+            <p className="text-gray-600 mb-6">
+              Ești sigur că vrei să ștergi această adresă?
+              <br />
+              <span className="font-medium">
+                {addressToDelete.name} - {addressToDelete.address},{" "}
+                {addressToDelete.city}
+              </span>
+            </p>
+            <div className="flex justify-end space-x-3">
               <button
-                className="bg-gray-500 text-white px-3 py-2 rounded-md mr-4"
                 onClick={closeDeleteModal}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors"
               >
                 Anulează
               </button>
               <button
-                className="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded-md"
                 onClick={deleteAddress}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
                 Șterge
               </button>

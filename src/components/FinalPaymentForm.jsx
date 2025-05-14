@@ -256,7 +256,7 @@ const FinalPaymentForm = ({
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg"
                   alt="Mastercard"
-                  className="h-4"
+                  className="h-7 mt-1.5"
                 />
               </div>
             </div>
@@ -302,7 +302,7 @@ const FinalPaymentForm = ({
               Sumă: {amount ? amount.toFixed(2) : "0.00"} RON
             </p>
           </div>
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="flex items-center">
               <input
                 type="checkbox"

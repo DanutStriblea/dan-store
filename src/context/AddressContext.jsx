@@ -282,18 +282,26 @@ export const AddressProvider = ({ children }) => {
   // Funcții de actualizare a adreselor din order_details
   const setDeliveryAddress = async (address, orderId) => {
     if (!orderId || !address?.id) return;
-    const { error } = await supabase
-      .from("order_details")
-      .update({ delivery_address_id: address.id })
-      .eq("id", orderId);
-    if (error) {
-      console.error("Error updating delivery address:", error.message);
-      return;
-    }
+
+    // Always update the local state first for responsive UI
     setDeliveryAddressState(address);
 
-    // Salvăm adresa în localStorage pentru a păstra selecția între navigări
+    // Always save to localStorage for persistence between page loads
     localStorage.setItem("selected_delivery_address_id", address.id);
+
+    try {
+      // Try to update the database
+      const { error } = await supabase
+        .from("order_details")
+        .update({ delivery_address_id: address.id.toString() })
+        .eq("id", orderId);
+
+      if (error) {
+        console.error("Error updating delivery address:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception when updating delivery address:", err);
+    }
   };
 
   const setBillingAddress = async (address, orderId) => {

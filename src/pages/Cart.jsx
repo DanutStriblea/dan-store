@@ -101,6 +101,10 @@ const Cart = () => {
                               {item.products?.description ||
                                 "Product Description"}
                             </p>
+                            <p className="text-xs text-gray-700 mt-1">
+                              <span className="font-semibold">Preț:</span>{" "}
+                              {item.products?.price || 0} RON
+                            </p>
                           </div>
                         </div>
                       </Link>

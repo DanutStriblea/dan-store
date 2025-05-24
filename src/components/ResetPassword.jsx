@@ -7,6 +7,7 @@ import RequestResetPassword from "./RequestResetPassword";
 const ResetPassword = ({
   fromInternalTrigger = false,
   requiresOldPassword = false,
+  onClose = null,
 }) => {
   console.log("Componenta ResetPassword a fost încărcată.");
 
@@ -146,7 +147,13 @@ const ResetPassword = ({
       setMessage("Parola a fost resetată cu succes!");
       setTimeout(() => {
         setMessage("");
-        navigate("/");
+        // Dacă suntem într-un popup intern și avem onClose, îl folosim
+        if (fromInternalTrigger && onClose) {
+          onClose();
+        } else {
+          // Altfel, navigăm la home
+          navigate("/");
+        }
       }, 4000);
     } catch (err) {
       console.error("Eroare detectată:", err.message);
@@ -155,7 +162,13 @@ const ResetPassword = ({
   };
 
   const handleClose = () => {
-    navigate("/");
+    // Dacă avem un callback onClose (furnizat de părinte), îl folosim
+    if (onClose) {
+      onClose();
+    } else {
+      // Comportament implicit - navighează înapoi la home
+      navigate("/myaccount");
+    }
   };
 
   if (isLoading) return <p>Se încarcă...</p>;
@@ -286,6 +299,7 @@ const ResetPassword = ({
 ResetPassword.propTypes = {
   fromInternalTrigger: PropTypes.bool, // Prop pentru activare flux intern/extern
   requiresOldPassword: PropTypes.bool, // Prop pentru activare validare parolă veche
+  onClose: PropTypes.func, // Funcția de callback pentru închiderea popup-ului
 };
 
 export default ResetPassword;

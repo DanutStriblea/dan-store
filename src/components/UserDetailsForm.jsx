@@ -210,7 +210,11 @@ const UserDetailsForm = () => {
 
       {/* Pop-up-ul ResetPassword */}
       {showResetPassword && (
-        <ResetPassword fromInternalTrigger={true} requiresOldPassword={true} />
+        <ResetPassword
+          fromInternalTrigger={true}
+          requiresOldPassword={true}
+          onClose={() => setShowResetPassword(false)}
+        />
       )}
     </div>
   );
